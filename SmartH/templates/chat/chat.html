@@ -1,0 +1,272 @@
+{% if session['role'] == 'patient' %}
+    {% extends "patient/base_patient.html" %}
+{% elif session['role'] == 'doctor' %}
+    {% extends "doctor/base_doctor.html" %}
+{% else %}
+    {% extends "base.html" %}
+{% endif %}
+
+{% block title %}Chat with {{ target_user.name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="breadcrumb">
+    <a href="{{ url_for('chat_list') }}">Messages</a><span>›</span>Chat with {{ target_user.name }}
+  </div>
+  <h1>💬 Teleconsultation with {{ target_user.name }}</h1>
+  <p>{{ 'Consult your specialist' if target_user.role == 'doctor' else 'Discuss patient care details' }}</p>
+</div>
+
+<div class="card" style="height: 70vh; display: flex; flex-direction: column; overflow: hidden; background: #fffcf8;">
+  <div class="card-header" style="background: var(--pink-600); color: white; border: none; padding: 1.25rem 1.5rem; display: flex; align-items: center; justify-content: space-between;">
+    <div style="display: flex; align-items: center; gap: 1rem;">
+      <div style="width: 44px; height: 44px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.4rem;">
+        {% if target_user.role == 'doctor' %}👨‍⚕️{% else %}👤{% endif %}
+      </div>
+      <div>
+        <h5 style="margin: 0; color: white;">{{ target_user.name }}</h5>
+        <div style="font-size: 0.82rem; opacity: 0.85; display: flex; align-items: center; gap: 0.4rem;">
+          <div id="statusDot" class="status-dot offline" style="width: 8px; height: 8px;"></div>
+          <span id="statusText">Offline</span>
+          <span id="connStatus" style="margin-left: 10px; font-size: 0.75rem; border: 1px solid rgba(255,255,255,0.3); padding: 1px 6px; border-radius: 4px;">Connecting...</span>
+        </div>
+      </div>
+    </div>
+    <div style="display: flex; gap: 0.5rem;">
+      <button class="btn btn-sm" style="background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 20px;" onclick="requestCall('video')">📹 Video </button>
+      <button class="btn btn-sm" style="background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 20px;" onclick="requestCall('audio')">📞 Audio</button>
+      <a href="{{ url_for('chat_list') }}" class="btn btn-sm" style="background: rgba(0,0,0,0.1); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 20px;">🔙 Back</a>
+    </div>
+  </div>
+
+  <div class="chat-messages" id="chatArea" style="flex: 1; overflow-y: auto; padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; background: url('https://www.transparenttextures.com/patterns/cubes.png');">
+    {% for msg in messages %}
+      <div class="chat-item {{ 'self' if msg.sender_id == session['user_id'] else 'other' }}" style="display: flex; flex-direction: column; max-width: 80%; {{ 'align-self: flex-end;' if msg.sender_id == session['user_id'] else 'align-self: flex-start;' }}">
+        <div style="padding: 0.85rem 1.25rem; border-radius: 1.25rem; {{ 'background: var(--pink-600); color: white; border-bottom-right-radius: 0.25rem;' if msg.sender_id == session['user_id'] else 'background: #fff; color: var(--gray-800); border-bottom-left-radius: 0.25rem; box-shadow: 0 4px 12px rgba(0,0,0,0.05);' }}">
+          {% if msg.file_path %}
+            {% if msg.file_type == 'image' %}
+              <img src="{{ msg.file_path }}" style="max-width: 100%; border-radius: 0.5rem; margin-bottom: 0.5rem; display: block;">
+            {% elif msg.file_type == 'video' %}
+              <video src="{{ msg.file_path }}" controls style="max-width: 100%; border-radius: 0.5rem; margin-bottom: 0.5rem; display: block;"></video>
+            {% elif msg.file_type == 'audio' %}
+              <audio src="{{ msg.file_path }}" controls style="max-width: 100%; margin-bottom: 0.5rem; display: block;"></audio>
+            {% else %}
+              <div style="background: rgba(0,0,0,0.05); padding: 0.5rem; border-radius: 0.5rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                <span>📄</span> <a href="{{ msg.file_path }}" target="_blank" style="color: inherit; text-decoration: underline;">{{ msg.message }}</a>
+              </div>
+            {% endif %}
+          {% else %}
+            {{ msg.message }}
+          {% endif %}
+        </div>
+        <div style="font-size: 0.72rem; color: var(--gray-400); margin-top: 0.25rem; {{ 'text-align: right;' if msg.sender_id == session['user_id'] else 'text-align: left;' }}">
+          {{ msg.created_at[11:16] if msg.created_at else '' }}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <!-- Call Notification Overlay -->
+  <div id="callOverlay" style="display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center; color: white; text-align: center;">
+    <div class="card" style="width: 300px; padding: 2rem; background: #1a1a1a; border: 1px solid #333;">
+      <div style="font-size: 3rem; margin-bottom: 1rem;">📞</div>
+      <h4 id="callTitle">Incoming Request</h4>
+      <p id="callMsg">Doctor is requesting a live session...</p>
+      <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 1.5rem;">
+        <button class="btn btn-success" onclick="respondCall(true)">Accept & Reply</button>
+        <button class="btn btn-danger" onclick="respondCall(false)">Decline</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="typingIndicator" style="display: none; padding: 0.5rem 1.5rem; font-size: 0.78rem; font-style: italic; color: var(--gray-500);">
+    {{ target_user.name }} is typing...
+  </div>
+
+  <div class="chat-input-bar" style="padding: 1.25rem 1.5rem; background: white; border-top: 1px solid var(--gray-100); display: flex; gap: 0.75rem; align-items: center;">
+    <input type="file" id="fileInput" style="display: none;" onchange="uploadFile()">
+    <button class="btn" style="background: var(--pink-50); color: var(--pink-600); border-radius: 50%; width: 40px; height: 40px; padding: 0;" onclick="document.getElementById('fileInput').click()">
+      📎
+    </button>
+    <input type="text" id="msgInput" placeholder="Type a message..." style="flex: 1; border: 2px solid var(--gray-100); border-radius: 3rem; padding: 0.75rem 1.5rem; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='var(--pink-400)'" onblur="this.style.borderColor='var(--gray-100)'" onkeydown="onKey(event)">
+    <button class="btn btn-primary" style="border-radius: 50%; width: 48px; height: 48px; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; box-shadow: 0 4px 12px rgba(233, 30, 99, 0.3);" onclick="sendMsg()">
+      ➤
+    </button>
+  </div>
+</div>
+
+<style>
+  .chat-item.self { align-self: flex-end; }
+  .chat-item.other { align-self: flex-start; }
+  .status-dot.online { background: #00c853; box-shadow: 0 0 10px #00c853; }
+  .status-dot.offline { background: #bdbdbd; }
+  video, audio, img { max-width: 100%; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+</style>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+const targetId = {{ target_user.id }};
+const chatArea = document.getElementById('chatArea');
+const msgInput = document.getElementById('msgInput');
+const typingIndicator = document.getElementById('typingIndicator');
+const callOverlay = document.getElementById('callOverlay');
+
+// Scroll to bottom
+chatArea.scrollTop = chatArea.scrollHeight;
+
+socket.on('connect', () => {
+    document.getElementById('connStatus').textContent = '✅ Secure connection established';
+    document.getElementById('connStatus').style.borderColor = '#00c853';
+    document.getElementById('connStatus').style.color = '#00c853';
+
+    fetch(`/api/user_status/${targetId}`).then(r=>r.json()).then(data => {
+        updateStatus(data.status);
+    });
+
+    // Ping test
+    socket.emit('ping');
+});
+
+socket.on('disconnect', () => {
+    document.getElementById('connStatus').textContent = '❌ Connection lost...';
+    document.getElementById('connStatus').style.borderColor = '#ff1744';
+    document.getElementById('connStatus').style.color = '#ff1744';
+});
+
+socket.on('pong', (data) => {
+    console.log('[Socket] Ping Response:', data.time);
+});
+
+socket.on('user_status_change', (data) => {
+    if (data.user_id == targetId) {
+        updateStatus(data.status);
+    }
+});
+
+function requestCall(type) {
+    socket.emit('call_request', { target_doctor_id: targetId, type: type });
+    alert(`Calling ${type} request sent...`);
+}
+
+function updateStatus(status) {
+    const dot = document.getElementById('statusDot');
+    const text = document.getElementById('statusText');
+    if (status === 'online') {
+        dot.className = 'status-dot online';
+        text.textContent = 'Online';
+    } else {
+        dot.className = 'status-dot offline';
+        text.textContent = 'Offline';
+    }
+}
+
+function sendMsg() {
+    const msg = msgInput.value.trim();
+    if (!msg) return;
+
+    socket.emit('send_message', { target_id: targetId, message: msg, file_type: 'text' });
+    addMsg('self', 'You', msg, new Date().toTimeString().slice(0, 5));
+    msgInput.value = '';
+    
+    socket.emit('typing', { target_id: targetId, is_typing: false });
+}
+
+function uploadFile() {
+    const file = document.getElementById('fileInput').files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('target_id', targetId);
+
+    fetch('/chat/upload', {
+        method: 'POST',
+        body: formData
+    }).then(r => r.json()).then(data => {
+        if (data.success) {
+            addMsg('self', 'You', data.filename, data.time, data.file_path, data.file_type);
+        } else {
+            alert(data.error || 'Upload failed');
+        }
+    });
+}
+
+function onKey(e) {
+    if (e.key === 'Enter') { sendMsg(); return; }
+    socket.emit('typing', { target_id: targetId, is_typing: true });
+    clearTimeout(window.typingTimer);
+    window.typingTimer = setTimeout(() => {
+        socket.emit('typing', { target_id: targetId, is_typing: false });
+    }, 2000);
+}
+
+socket.on('is_typing', (data) => {
+    if (data.from_id == targetId) {
+        typingIndicator.style.display = data.is_typing ? 'block' : 'none';
+        chatArea.scrollTop = chatArea.scrollHeight;
+    }
+});
+
+socket.on('receive_message', (data) => {
+    if (data.from_id == targetId) {
+        addMsg('other', data.from_name, data.message, data.time || new Date().toTimeString().slice(0, 5), data.file_path, data.file_type);
+    }
+});
+
+socket.on('incoming_call', (data) => {
+    if (data.from_id == targetId) {
+        document.getElementById('callTitle').textContent = `Request from ${data.from_name}`;
+        document.getElementById('callMsg').textContent = `${data.from_name} wants to start a live session.`;
+        callOverlay.style.display = 'flex';
+    }
+});
+
+function respondCall(accepted) {
+    callOverlay.style.display = 'none';
+    socket.emit('call_response', { target_id: targetId, accepted: accepted });
+    if (accepted) {
+        // Automatically reply to confirm acceptance
+        msgInput.value = "I have accepted your request. Let's talk.";
+        sendMsg();
+    }
+}
+
+function addMsg(type, name, msg, time, filePath=null, fileType='text') {
+    const div = document.createElement('div');
+    div.className = `chat-item ${type}`;
+    div.style.cssText = `display: flex; flex-direction: column; max-width: 80%; ${type === 'self' ? 'align-self: flex-end;' : 'align-self: flex-start;'}`;
+    
+    const bg = type === 'self' ? 'var(--pink-600)' : '#fff';
+    const color = type === 'self' ? 'white' : 'var(--gray-800)';
+    const radius = type === 'self' ? 'border-bottom-right-radius: 0.25rem;' : 'border-bottom-left-radius: 0.25rem; box-shadow: 0 4px 12px rgba(0,0,0,0.05);';
+    
+    let content = msg;
+    if (filePath) {
+        if (fileType === 'image') {
+            content = `<img src="${filePath}" style="max-width: 100%; border-radius: 0.5rem; margin-bottom: 0.5rem; display: block;">`;
+        } else if (fileType === 'video') {
+            content = `<video src="${filePath}" controls style="max-width: 100%; border-radius: 0.5rem; margin-bottom: 0.5rem; display: block;"></video>`;
+        } else if (fileType === 'audio') {
+            content = `<audio src="${filePath}" controls style="max-width: 100%; margin-bottom: 0.5rem; display: block;"></audio>`;
+        } else {
+            content = `<div style="background: rgba(0,0,0,0.05); padding: 0.5rem; border-radius: 0.5rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                <span>📄</span> <a href="${filePath}" target="_blank" style="color: inherit; text-decoration: underline;">${msg}</a>
+              </div>`;
+        }
+    }
+
+    div.innerHTML = `
+        <div style="padding: 0.85rem 1.25rem; border-radius: 1.25rem; background: ${bg}; color: ${color}; ${radius}">
+            ${content}
+        </div>
+        <div style="font-size: 0.72rem; color: var(--gray-400); margin-top: 0.25rem; ${type === 'self' ? 'text-align: right;' : 'text-align: left;'}">
+            ${time}
+        </div>
+    `;
+    chatArea.appendChild(div);
+    chatArea.scrollTop = chatArea.scrollHeight;
+}
+</script>
+{% endblock %}

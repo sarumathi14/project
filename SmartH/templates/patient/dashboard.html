@@ -1,0 +1,171 @@
+{% extends "patient/base_patient.html" %}
+{% block title %}Patient Dashboard{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="breadcrumb"><a href="{{ url_for('home') }}">Home</a><span>›</span>Patient Dashboard</div>
+  <h1>🏥 Welcome, {{ user.name }}</h1>
+  <p>Your personal health monitoring dashboard — <span class="live-dot">Real-Time</span></p>
+</div>
+
+<!-- Current Token (if any) -->
+{% if token %}
+<div class="token-display mb-3" style="max-width:360px;">
+  <div class="token-label">Your Active Token</div>
+  <div class="token-number">#{{ token.token_number }}</div>
+  <div class="token-label">Status: {{ token.status | title }}</div>
+</div>
+{% endif %}
+
+<!-- Live Vitals -->
+<div style="margin-bottom:2rem;">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+    <h3 style="font-family:var(--font-heading);font-weight:700;font-size:1.15rem;">❤️ Current Vital Signs</h3>
+    <span class="live-dot">MONITORING ACTIVE</span>
+  </div>
+  <div class="vitals-grid">
+    <div class="vital-card hr">
+      <div class="vital-icon">❤️</div>
+      <div class="vital-label">Heart Rate</div>
+      <div class="vital-value" id="hr">{{ vitals.heart_rate }}</div>
+      <div class="vital-unit">BPM</div>
+      <div class="vital-status {% if vitals.heart_rate < 60 or vitals.heart_rate > 100 %}warning{% else %}normal{% endif %}">
+        {% if vitals.heart_rate < 60 or vitals.heart_rate > 100 %}Abnormal{% else %}Normal{% endif %}
+      </div>
+    </div>
+    <div class="vital-card bp">
+      <div class="vital-icon">🩸</div>
+      <div class="vital-label">Blood Pressure</div>
+      <div class="vital-value" style="font-size:1.4rem;" id="bp">{{ vitals.blood_pressure_sys }}/{{ vitals.blood_pressure_dia }}</div>
+      <div class="vital-unit">mmHg</div>
+      <div class="vital-status {% if vitals.blood_pressure_sys > 130 %}warning{% else %}normal{% endif %}">
+        {% if vitals.blood_pressure_sys > 130 %}High{% else %}Normal{% endif %}
+      </div>
+    </div>
+    <div class="vital-card spo">
+      <div class="vital-icon">💨</div>
+      <div class="vital-label">SpO₂ Level</div>
+      <div class="vital-value" id="spo2">{{ "%.1f"|format(vitals.spo2) }}</div>
+      <div class="vital-unit">%</div>
+      <div class="vital-status {% if vitals.spo2 < 95 %}critical{% else %}normal{% endif %}">
+        {% if vitals.spo2 < 95 %}Low{% else %}Normal{% endif %}
+      </div>
+    </div>
+    <div class="vital-card tmp">
+      <div class="vital-icon">🌡️</div>
+      <div class="vital-label">Temperature</div>
+      <div class="vital-value" id="temp">{{ vitals.temperature }}</div>
+      <div class="vital-unit">°C</div>
+      <div class="vital-status {% if vitals.temperature > 37.5 %}warning{% else %}normal{% endif %}">
+        {% if vitals.temperature > 37.5 %}Fever{% else %}Normal{% endif %}
+      </div>
+    </div>
+    <div class="vital-card glu">
+      <div class="vital-icon">🧪</div>
+      <div class="vital-label">Glucose</div>
+      <div class="vital-value" id="glu">{{ vitals.glucose }}</div>
+      <div class="vital-unit">mg/dL</div>
+      <div class="vital-status {% if vitals.glucose > 126 %}warning{% elif vitals.glucose < 70 %}critical{% else %}normal{% endif %}">
+        {% if vitals.glucose > 126 %}High{% elif vitals.glucose < 70 %}Low{% else %}Normal{% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Quick Actions -->
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1rem;margin-bottom:2rem;">
+  <a href="{{ url_for('patient_vitals') }}" class="btn btn-primary" style="flex-direction:column;padding:1rem;gap:.4rem;justify-content:center;text-align:center;">❤️<br><span style="font-size:.75rem;font-weight:600;">Vitals</span></a>
+  <a href="{{ url_for('patient_appointments') }}" class="btn btn-info" style="flex-direction:column;padding:1rem;gap:.4rem;justify-content:center;text-align:center;">📅<br><span style="font-size:.75rem;font-weight:600;">Book</span></a>
+  <a href="{{ url_for('chat_list') }}" class="btn btn-pink" style="flex-direction:column;padding:1rem;gap:.4rem;justify-content:center;text-align:center; background: var(--pink-600); color: white;">💬<br><span style="font-size:.75rem;font-weight:600;">Messages</span></a>
+  <a href="{{ url_for('patient_health_profile') }}" class="btn btn-warning" style="flex-direction:column;padding:1rem;gap:.4rem;justify-content:center;text-align:center; background: #ff9800; color: white;">👤<br><span style="font-size:.75rem;font-weight:600;">Profile</span></a>
+  <a href="{{ url_for('patient_teleconsult') }}" class="btn btn-success" style="flex-direction:column;padding:1rem;gap:.4rem;justify-content:center;text-align:center;">📹<br><span style="font-size:.75rem;font-weight:600;">Consult</span></a>
+  <a href="{{ url_for('patient_emergency') }}" class="btn btn-danger" style="flex-direction:column;padding:1rem;gap:.4rem;justify-content:center;text-align:center;">🚨<br><span style="font-size:.75rem;font-weight:600;">SOS</span></a>
+  <a href="{{ url_for('patient_records') }}" class="btn btn-secondary" style="flex-direction:column;padding:1rem;gap:.4rem;justify-content:center;text-align:center;color:var(--gray-800);">📋<br><span style="font-size:.75rem;font-weight:600;">Records</span></a>
+</div>
+
+<!-- Mini Charts + Recent Data -->
+<div class="chart-grid">
+  <div class="chart-container">
+    <h5>📈 Today's Heart Rate</h5>
+    <div class="chart-wrapper"><canvas id="chartHRToday"></canvas></div>
+  </div>
+  <div class="chart-container">
+    <h5>🩸 Blood Pressure (Today)</h5>
+    <div class="chart-wrapper"><canvas id="chartBPToday"></canvas></div>
+  </div>
+</div>
+
+<!-- Recent Appointments & Alerts -->
+<div class="chart-grid">
+  <div class="card">
+    <div class="card-header">
+      <h5>📅 Recent Appointments</h5>
+      <a href="{{ url_for('patient_appointments') }}" class="btn btn-sm btn-outline-pink">View All</a>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Doctor</th><th>Date</th><th>Token</th><th>Status</th></tr></thead>
+        <tbody>
+          {% for a in appointments %}
+          <tr>
+            <td>{{ a.doctor_name }}</td>
+            <td>{{ a.date or '—' }}</td>
+            <td>#{{ a.token_number }}</td>
+            <td><span class="badge {% if a.status=='completed' %}badge-success{% elif a.status=='pending' %}badge-warning{% else %}badge-danger{% endif %}">{{ a.status }}</span></td>
+          </tr>
+          {% else %}
+          <tr><td colspan="4" style="text-align:center;padding:1.5rem;color:var(--gray-400);">No appointments yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h5>📋 Recent Prescriptions</h5>
+      <a href="{{ url_for('patient_records') }}" class="btn btn-sm btn-outline-pink">View All</a>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Doctor</th><th>Diagnosis</th><th>Date</th></tr></thead>
+        <tbody>
+          {% for r in records %}
+          <tr>
+            <td>{{ r.doctor_name }}</td>
+            <td><span class="badge badge-info">{{ r.diagnosis or '—' }}</span></td>
+            <td>{{ r.created_at[:10] if r.created_at else '-' }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="3" style="text-align:center;padding:1.5rem;color:var(--gray-400);">No records yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Generate 12h labels
+const hrs=[...Array(12)].map((_,i)=>{const d=new Date();d.setHours(d.getHours()-11+i);return d.toTimeString().slice(0,5);});
+const r=(a,b)=>Array.from({length:12},()=>Math.round(Math.random()*(b-a)+a));
+
+new Chart('chartHRToday',{type:'line',data:{labels:hrs,datasets:[{label:'HR',data:r(60,100),borderColor:'rgba(233,30,140,1)',backgroundColor:'rgba(233,30,140,.12)',borderWidth:2.5,fill:true,tension:.4,pointRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{min:50,max:120}}}});
+
+new Chart('chartBPToday',{type:'line',data:{labels:hrs,datasets:[{label:'Systolic',data:r(110,145),borderColor:'#5c6bc0',backgroundColor:'rgba(92,107,192,.1)',borderWidth:2,fill:true,tension:.4,pointRadius:3},{label:'Diastolic',data:r(68,90),borderColor:'#ec407a',backgroundColor:'rgba(236,64,122,.1)',borderWidth:2,fill:false,tension:.4,pointRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{font:{size:10}}}},scales:{y:{min:50,max:170}}}});
+
+// Live vitals refresh every 8s
+setInterval(async()=>{
+  try {
+    const res=await fetch('/api/vitals/live');
+    const v=await res.json();
+    document.getElementById('hr').textContent=v.heart_rate;
+    document.getElementById('bp').textContent=v.blood_pressure_sys+'/'+v.blood_pressure_dia;
+    document.getElementById('spo2').textContent=v.spo2.toFixed(1);
+    document.getElementById('temp').textContent=v.temperature;
+    document.getElementById('glu').textContent=v.glucose;
+  } catch(e){}
+}, 8000);
+</script>
+{% endblock %}

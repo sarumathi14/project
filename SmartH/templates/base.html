@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Smart Health{% endblock %} | Smart Health Monitoring & Teleconsultation</title>
+  <meta name="description" content="Advanced Smart Health Monitoring and Teleconsultation System - Real-time vital monitoring, AI-powered diagnostics, and remote doctor consultation.">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.socketio.org/4.7.2/socketio.min.js"></script>
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <a href="{{ url_for('home') }}" class="navbar-brand">
+      <div class="brand-icon">💊</div>
+      <div class="brand-text">Smart<span>Health</span></div>
+    </a>
+
+    <ul class="navbar-nav">
+      <li><a href="{{ url_for('home') }}" {% if request.endpoint == 'home' %}class="active"{% endif %}>🏠 Home</a></li>
+      <li><a href="{{ url_for('about') }}" {% if request.endpoint == 'about' %}class="active"{% endif %}>ℹ️ About</a></li>
+      <li><a href="{{ url_for('services') }}" {% if request.endpoint == 'services' %}class="active"{% endif %}>⚕️ Services</a></li>
+      {% if session.user_id %}
+        {% if session.role == 'patient' %}
+          <li><a href="{{ url_for('patient_dashboard') }}">📊 Dashboard</a></li>
+          <li><a href="{{ url_for('patient_vitals') }}">❤️ Vitals</a></li>
+          <li><a href="{{ url_for('patient_appointments') }}">📅 Appointments</a></li>
+        {% elif session.role == 'doctor' %}
+          <li><a href="{{ url_for('doctor_dashboard') }}">📊 Dashboard</a></li>
+        {% elif session.role == 'admin' %}
+          <li><a href="{{ url_for('admin_dashboard') }}">🛡️ Admin</a></li>
+        {% endif %}
+      {% endif %}
+      <li><a href="{{ url_for('contact') }}">📞 Contact</a></li>
+    </ul>
+
+    <div class="navbar-actions">
+      {% if session.user_id %}
+        <span style="color:rgba(255,255,255,.8);font-size:.88rem;">👤 {{ session.name }}</span>
+        <a href="{{ url_for('logout') }}" class="btn-nav">🚪 Logout</a>
+      {% else %}
+        <a href="{{ url_for('login') }}" class="btn-nav-outline">Login</a>
+        <a href="{{ url_for('register') }}" class="btn-nav">Register</a>
+      {% endif %}
+    </div>
+  </nav>
+
+  <!-- Global Call Notification (For Doctors) -->
+  <div id="callNotification" class="card" style="display:none; position:fixed; top:80px; right:20px; z-index:9999; width:300px; border-left:5px solid var(--pink-500); box-shadow: var(--shadow-lg); animation: slideInIn .4s ease;">
+    <div class="card-body" style="padding:1.2rem;">
+      <h6 style="margin-bottom:.5rem; display:flex; align-items:center; gap:.5rem;"><span id="callTypeIcon">📹</span> Incoming <span id="callTypeLabel">Video</span> Request</h6>
+      <p style="font-size:.85rem; color:var(--gray-600); margin-bottom:1rem;"><strong>Patient:</strong> <span id="callerName">John Doe</span></p>
+      <div style="display:flex; gap:.5rem;">
+        <button class="btn btn-success btn-sm" style="flex:1;" id="notifyAccept">Accept</button>
+        <button class="btn btn-danger btn-sm" style="flex:1;" id="notifyDecline">Decline</button>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    @keyframes slideInIn {
+      from { transform: translateX(110%); opacity:0; }
+      to { transform: translateX(0); opacity:1; }
+    }
+  </style>
+
+  <!-- Flash Messages -->
+  <div style="padding: 0 1rem;" id="flash-container">
+    {% for cat, msg in get_flashed_messages(with_categories=True) %}
+      <div class="alert alert-{{ cat }} fade-in" style="border-radius:0;margin:0;">
+        {% if cat == 'success' %}✅{% elif cat == 'danger' %}❌{% elif cat == 'warning' %}⚠️{% else %}ℹ️{% endif %}
+        {{ msg }}
+      </div>
+    {% endfor %}
+  </div>
+
+  {% block content %}{% endblock %}
+
+  <!-- Footer -->
+  {% block footer %}
+  <footer>
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <div class="navbar-brand" style="margin-bottom:.5rem;">
+            <div class="brand-icon" style="background:rgba(255,255,255,.18);">💊</div>
+            <div class="brand-text">Smart<span>Health</span></div>
+          </div>
+          <p>Advanced healthcare monitoring platform combining AI, IoT sensors, and telemedicine for comprehensive patient care.</p>
+        </div>
+        <div class="footer-col">
+          <h5>Platform</h5>
+          <ul>
+            <li><a href="{{ url_for('home') }}">Home</a></li>
+            <li><a href="{{ url_for('about') }}">About Us</a></li>
+            <li><a href="{{ url_for('services') }}">Services</a></li>
+            <li><a href="{{ url_for('contact') }}">Contact</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h5>For Patients</h5>
+          <ul>
+            <li><a href="{{ url_for('register') }}">Register</a></li>
+            <li><a href="{{ url_for('login') }}">Login</a></li>
+            <li><a href="{{ url_for('patient_appointments') if session.user_id else url_for('login') }}">Appointments</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h5>Contact</h5>
+          <ul>
+            <li><a href="#">📧 info@smarthealth.com</a></li>
+            <li><a href="#">📞 +1-800-HEALTH</a></li>
+            <li><a href="#">📍 Health Tech Park, CA</a></li>
+            <li><a href="#">🚨 Emergency: 911</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© 2024 SmartHealth Monitoring System. All rights reserved.</span>
+        <span>🩺 Powered by AI & IoT Technology</span>
+      </div>
+    </div>
+  </footer>
+  {% endblock %}
+
+  <script>
+    // Auto-dismiss flash messages
+    setTimeout(() => {
+      const flashes = document.querySelectorAll('#flash-container .alert');
+      flashes.forEach(f => { f.style.transition = 'all .5s ease'; f.style.opacity = '0'; f.style.maxHeight = '0'; f.style.padding = '0'; setTimeout(() => f.remove(), 500); });
+    }, 4000);
+
+    // Global SocketIO Setup
+    const socket = io();
+    const currentUserId = parseInt("{{ session.user_id if session.user_id else 0 }}");
+    const currentUserRole = "{{ session.role if session.role else '' }}";
+
+    socket.on('incoming_call', (data) => {
+      if (currentUserRole === 'doctor') {
+        const notify = document.getElementById('callNotification');
+        document.getElementById('callTypeIcon').textContent = (data.type === 'video' ? '📹' : (data.type === 'audio' ? '📞' : '💬'));
+        document.getElementById('callTypeLabel').textContent = data.type.charAt(0).toUpperCase() + data.type.slice(1);
+        document.getElementById('callerName').textContent = data.from_name;
+        notify.style.display = 'block';
+
+        const handleResponse = (accepted) => {
+          socket.emit('call_response', {
+            target_id: data.from_id,
+            accepted: accepted,
+            type: data.type
+          });
+          notify.style.display = 'none';
+          if (accepted) {
+            window.location.href = "{{ url_for('doctor_dashboard') }}?start_call=true&patient_id=" + data.from_id + "&type=" + data.type;
+          }
+        };
+
+        document.getElementById('notifyAccept').onclick = () => handleResponse(true);
+        document.getElementById('notifyDecline').onclick = () => handleResponse(false);
+      }
+    });
+
+    socket.on('call_status', (data) => {
+      if (currentUserRole === 'patient') {
+        if (data.accepted) {
+          alert(`✅ Dr. ${data.doctor_name} has accepted your ${data.type} call!`);
+          // Logic handled in teleconsult.html
+        } else {
+          alert(`❌ Dr. ${data.doctor_name} is busy or declined the call.`);
+        }
+      }
+    });
+
+    socket.on('call_error', (data) => {
+      alert(data.message);
+    });
+  </script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

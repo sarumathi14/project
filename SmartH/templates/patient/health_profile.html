@@ -1,0 +1,87 @@
+{% extends "patient/base_patient.html" %}
+{% block title %}Update Health Profile{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="breadcrumb"><a href="{{ url_for('patient_dashboard') }}">Dashboard</a><span>›</span>Health Profile</div>
+  <h1>👤 Update Your Health Details</h1>
+  <p>Keep your medical information up to date for better care</p>
+</div>
+
+<div class="card" style="max-width: 800px; margin: 0 auto;">
+  <div class="card-body">
+    <form action="{{ url_for('patient_health_profile') }}" method="POST">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+        <!-- Personal Section -->
+        <div style="grid-column: span 2;">
+          <h4 style="border-bottom: 2px solid var(--pink-100); padding-bottom: .5rem; margin-bottom: 1rem; color: var(--pink-600);">Basic Information</h4>
+        </div>
+        
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" name="name" value="{{ user.name }}" required>
+        </div>
+        <div class="form-group">
+          <label>Phone Number</label>
+          <input type="text" name="phone" value="{{ user.phone }}">
+        </div>
+        <div class="form-group">
+          <label>Age</label>
+          <input type="number" name="age" value="{{ user.age or 0 }}">
+        </div>
+        <div class="form-group">
+          <label>Gender</label>
+          <select name="gender">
+            <option value="Male" {% if user.gender == 'Male' %}selected{% endif %}>Male</option>
+            <option value="Female" {% if user.gender == 'Female' %}selected{% endif %}>Female</option>
+            <option value="Other" {% if user.gender == 'Other' %}selected{% endif %}>Other</option>
+          </select>
+        </div>
+
+        <!-- Health Section -->
+        <div style="grid-column: span 2; margin-top: 1rem;">
+          <h4 style="border-bottom: 2px solid var(--pink-100); padding-bottom: .5rem; margin-bottom: 1rem; color: var(--pink-600);">Medical History</h4>
+        </div>
+
+        <div class="form-group">
+          <label>Blood Group</label>
+          <select name="blood_group">
+            <option value="">Select</option>
+            <option value="A+" {% if health and health.blood_group == 'A+' %}selected{% endif %}>A+</option>
+            <option value="A-" {% if health and health.blood_group == 'A-' %}selected{% endif %}>A-</option>
+            <option value="B+" {% if health and health.blood_group == 'B+' %}selected{% endif %}>B+</option>
+            <option value="B-" {% if health and health.blood_group == 'B-' %}selected{% endif %}>B-</option>
+            <option value="AB+" {% if health and health.blood_group == 'AB+' %}selected{% endif %}>AB+</option>
+            <option value="AB-" {% if health and health.blood_group == 'AB-' %}selected{% endif %}>AB-</option>
+            <option value="O+" {% if health and health.blood_group == 'O+' %}selected{% endif %}>O+</option>
+            <option value="O-" {% if health and health.blood_group == 'O-' %}selected{% endif %}>O-</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Allergies</label>
+          <input type="text" name="allergies" value="{{ health.allergies if health else '' }}" placeholder="e.g. Peanuts, Penicillin">
+        </div>
+
+        <div class="form-group" style="grid-column: span 2;">
+          <label>Chronic Diseases</label>
+          <textarea name="chronic_diseases" rows="2" placeholder="e.g. Diabetes, Hypertension">{{ health.chronic_diseases if health else '' }}</textarea>
+        </div>
+
+        <div class="form-group" style="grid-column: span 2;">
+          <label>Past Surgeries</label>
+          <textarea name="past_surgeries" rows="2">{{ health.past_surgeries if health else '' }}</textarea>
+        </div>
+
+        <div class="form-group" style="grid-column: span 2;">
+          <label>Current Medications</label>
+          <textarea name="current_medications" rows="2">{{ health.current_medications if health else '' }}</textarea>
+        </div>
+      </div>
+
+      <div style="text-align: right;">
+        <button type="submit" class="btn btn-primary btn-lg">💾 Save Profile Details</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

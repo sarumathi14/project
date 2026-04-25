@@ -1,0 +1,289 @@
+{% extends "patient/base_patient.html" %}
+{% block title %}Teleconsultation{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="breadcrumb"><a href="{{ url_for('patient_dashboard') }}">Dashboard</a><span>›</span>Teleconsultation</div>
+  <h1>📹 Teleconsultation Center</h1>
+  <p>Connect with doctors via video, audio, or chat</p>
+</div>
+
+<!-- Online Spotlight -->
+<div class="card mb-4" id="onlineSpotlight" style="display:none; background: linear-gradient(135deg, var(--white) 0%, var(--pink-50) 100%); border-left: 5px solid var(--success);">
+  <div class="card-body">
+    <h5 style="color:var(--success); display:flex; align-items:center; gap:.5rem; margin-bottom:1rem;">⚡ Online Specialists Ready</h5>
+    <div id="onlineDocsList" style="display:flex; gap:1.5rem; flex-wrap:wrap;">
+      <!-- Doctors will be injected here if they are online -->
+    </div>
+  </div>
+</div>
+
+<!-- Doctor Selection -->
+<h5 class="mb-3">🩺 All Specialists</h5>
+<div class="doctors-grid mb-3" id="doctorsGrid">
+  {% for d in doctors %}
+  <div class="doctor-card" data-doctor-id="{{ d.id }}">
+    <div class="doctor-avatar">{% if loop.index % 2 == 0 %}👨‍⚕️{% else %}👩‍⚕️{% endif %}</div>
+    <h4>{{ d.name }}</h4>
+    <div class="specialty">{{ d.specialization or 'General Medicine' }}</div>
+    <div class="doctor-status">
+      <div class="status-dot offline" id="status-{{ d.id }}"></div>
+      <span id="text-{{ d.id }}">Offline</span>
+    </div>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center;">
+      <button class="btn btn-primary btn-sm" onclick="requestCall('{{ d.id }}', '{{ d.name }}', 'video')">📹 Video</button>
+      <button class="btn btn-info btn-sm" onclick="requestCall('{{ d.id }}', '{{ d.name }}', 'voice')">📞 Voice</button>
+      <button class="btn btn-success btn-sm" onclick="requestCall('{{ d.id }}', '{{ d.name }}', 'chat')">💬 Chat</button>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Consultation Room -->
+<div id="consultRoom" style="display:none;">
+  <div class="consult-room">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+      <h3 style="color:#fff;font-family:var(--font-heading);" id="consultTitle">Consultation</h3>
+      <div class="live-dot" style="color:#00c853;">CONNECTED</div>
+    </div>
+
+    <div class="video-grid">
+      <!-- Main Video -->
+      <div class="video-panel">
+        <video id="remoteVideo" autoplay playsinline style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius-md);background:#000;display:none;"></video>
+        <div class="video-placeholder" id="videoPlaceholder">
+          <div class="video-avatar" id="doctorAvatar">👩‍⚕️</div>
+          <div id="doctorNameDisplay">Dr. Sarah Johnson</div>
+          <div style="font-size:.78rem;opacity:.6;" id="feedType">Video Feed</div>
+        </div>
+      </div>
+      <!-- Chat Panel -->
+      <div class="chat-box">
+        <div style="padding:.75rem 1rem;border-bottom:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.8);font-size:.85rem;font-weight:600;">💬 Chat</div>
+        <div class="chat-messages" id="chatMessages"></div>
+        <div id="typingIndicator" style="display:none; padding: .5rem 1rem; font-size: .8rem; color: var(--gray-500); font-style: italic;">Doctor is typing...</div>
+        <div class="chat-input">
+          <input type="text" id="chatInput" placeholder="Type a message..." onkeydown="handleTyping(event)">
+          <button class="btn btn-primary btn-sm" onclick="sendMsg()">➤</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Self video -->
+    <div style="margin-top:1rem;display:flex;justify-content:flex-end;">
+      <div class="video-panel" style="width:200px;height:120px;">
+        <video id="localVideo" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius-md);background:#000;display:none;"></video>
+        <div class="video-placeholder" id="localPlaceholder" style="font-size:.78rem;">
+          <div class="video-avatar" style="width:40px;height:40px;font-size:1rem;">🧑</div>
+          <div>You</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="consult-controls">
+      <button class="ctrl-btn active" id="muteBtn" onclick="toggleMute()">🎤</button>
+      <button class="ctrl-btn active" id="camBtn" onclick="toggleCam()">📷</button>
+      <button class="ctrl-btn end" title="End Call" onclick="endCall()">📵 End Call</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentTargetId = null;
+let currentCallType = null;
+let localStream = null;
+let peerConnection;
+const rtcConfig = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+
+// Initial Online Check
+fetch('/api/online_doctors').then(r=>r.json()).then(ids => {
+  ids.forEach(id => updateDocStatus(id, 'online'));
+});
+
+socket.on('user_status_change', (data) => {
+  updateDocStatus(data.user_id, data.status);
+});
+
+function updateDocStatus(id, status) {
+  const dot = document.getElementById('status-' + id);
+  const text = document.getElementById('text-' + id);
+  if (dot && text) {
+    if (status === 'online') {
+      dot.className = 'status-dot available online';
+      text.textContent = 'Online';
+      // Highlight in Spotlight
+      const originalCard = document.querySelector(`.doctor-card[data-doctor-id="${id}"]`);
+      if (originalCard && !document.getElementById(`spotlight-${id}`)) {
+        const spot = document.getElementById('onlineDocsList');
+        const clone = originalCard.cloneNode(true);
+        clone.id = `spotlight-${id}`;
+        clone.style.width = '240px';
+        clone.style.flexShrink = '0';
+        clone.querySelector('.status-dot').className = 'status-dot available online';
+        clone.querySelector('span').textContent = 'Live Ready';
+        spot.appendChild(clone);
+        document.getElementById('onlineSpotlight').style.display = 'block';
+      }
+    } else {
+      dot.className = 'status-dot offline';
+      text.textContent = 'Offline';
+      // Remove from Spotlight
+      const spotItem = document.getElementById(`spotlight-${id}`);
+      if (spotItem) spotItem.remove();
+      if (document.getElementById('onlineDocsList').children.length === 0) {
+        document.getElementById('onlineSpotlight').style.display = 'none';
+      }
+    }
+  }
+}
+
+function requestCall(id, name, type) {
+  const dot = document.getElementById('status-' + id);
+  if (dot.classList.contains('offline')) {
+    alert('This doctor is currently offline.');
+    return;
+  }
+  currentTargetId = id;
+  currentCallType = type;
+  document.getElementById('doctorNameDisplay').textContent = name;
+  alert(`Sending ${type} request to Dr. ${name}...`);
+  socket.emit('call_request', { target_id: id, type: type });
+}
+
+socket.on('call_status', async (data) => {
+  if (data.accepted) {
+    document.getElementById('consultRoom').style.display = 'block';
+    document.getElementById('consultTitle').textContent = `${data.type.toUpperCase()} Consultation with Dr. ${data.doctor_name}`;
+    document.getElementById('feedType').textContent = `${data.type.toUpperCase()} Feed`;
+    
+    if (data.type === 'video' || data.type === 'voice') {
+      await startMedia(data.type === 'video');
+      initCaller();
+    }
+    document.getElementById('consultRoom').scrollIntoView({behavior:'smooth'});
+  }
+});
+
+async function startMedia(video) {
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({ video: video, audio: true });
+    const lv = document.getElementById('localVideo');
+    lv.srcObject = localStream;
+    lv.style.display = 'block';
+    document.getElementById('localPlaceholder').style.display = 'none';
+  } catch (e) {
+    console.warn('Media access denied', e);
+    alert('Could not access camera/microphone');
+  }
+}
+
+async function initCaller() {
+  peerConnection = new RTCPeerConnection(rtcConfig);
+  if (localStream) localStream.getTracks().forEach(t => peerConnection.addTrack(t, localStream));
+  
+  peerConnection.ontrack = e => {
+    document.getElementById('remoteVideo').srcObject = e.streams[0];
+    document.getElementById('remoteVideo').style.display = 'block';
+    document.getElementById('videoPlaceholder').style.display = 'none';
+  };
+  
+  peerConnection.onicecandidate = e => {
+    if (e.candidate) socket.emit('webrtc_signal', { target_id: currentTargetId, signal: { ice: e.candidate } });
+  };
+  
+  const offer = await peerConnection.createOffer();
+  await peerConnection.setLocalDescription(offer);
+  socket.emit('webrtc_signal', { target_id: currentTargetId, signal: { offer: offer } });
+}
+
+socket.on('webrtc_signal', async (data) => {
+  if (!peerConnection) peerConnection = new RTCPeerConnection(rtcConfig);
+  
+  if (data.signal.answer) {
+    await peerConnection.setRemoteDescription(new RTCSessionDescription(data.signal.answer));
+  } else if (data.signal.ice) {
+    await peerConnection.addIceCandidate(new RTCIceCandidate(data.signal.ice));
+  }
+});
+
+function sendMsg() {
+  const inp = document.getElementById('chatInput');
+  const msg = inp.value.trim();
+  if (!msg || !currentTargetId) return;
+  
+  socket.emit('typing', { target_id: currentTargetId, is_typing: false });
+  socket.emit('send_message', { target_id: currentTargetId, message: msg, file_type: 'text' });
+  addMsg('sent', 'You', msg);
+  inp.value = '';
+}
+
+let typingTimeout;
+function handleTyping(event) {
+  if (event.key === 'Enter') {
+    sendMsg();
+    return;
+  }
+  if (!currentTargetId) return;
+  
+  socket.emit('typing', { target_id: currentTargetId, is_typing: true });
+  clearTimeout(typingTimeout);
+  typingTimeout = setTimeout(() => {
+    socket.emit('typing', { target_id: currentTargetId, is_typing: false });
+  }, 2000);
+}
+
+socket.on('is_typing', (data) => {
+  const indicator = document.getElementById('typingIndicator');
+  if (data.is_typing) {
+    indicator.style.display = 'block';
+  } else {
+    indicator.style.display = 'none';
+  }
+});
+
+socket.on('receive_message', (data) => {
+  addMsg('received', data.from_name, data.message);
+});
+
+function addMsg(type, name, msg) {
+  const container = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = `chat-msg ${type}`;
+  div.innerHTML = `<strong>${name}:</strong> ${msg}`;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+function endCall() {
+  if (localStream) {
+    localStream.getTracks().forEach(t => t.stop());
+  }
+  if (peerConnection) {
+    peerConnection.close();
+  }
+  document.getElementById('consultRoom').style.display = 'none';
+  currentTargetId = null;
+  location.reload();
+}
+
+function toggleMute() {
+  if (localStream) {
+    const audioTrack = localStream.getAudioTracks()[0];
+    audioTrack.enabled = !audioTrack.enabled;
+    document.getElementById('muteBtn').classList.toggle('active');
+  }
+}
+
+function toggleCam() {
+  if (localStream) {
+    const videoTrack = localStream.getVideoTracks()[0];
+    if (videoTrack) {
+      videoTrack.enabled = !videoTrack.enabled;
+      document.getElementById('camBtn').classList.toggle('active');
+    }
+  }
+}
+</script>
+{% endblock %}

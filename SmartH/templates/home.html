@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+{% block content %}
+<!-- Hero Section -->
+<section class="hero">
+  <div class="hero-particles">
+    <span style="left:10%;top:20%;animation-delay:0s;"></span>
+    <span style="left:25%;top:60%;animation-delay:1s;width:5px;height:5px;"></span>
+    <span style="left:50%;top:15%;animation-delay:2s;width:12px;height:12px;"></span>
+    <span style="left:70%;top:70%;animation-delay:.5s;"></span>
+    <span style="left:85%;top:30%;animation-delay:1.5s;width:6px;height:6px;"></span>
+    <span style="left:40%;top:80%;animation-delay:2.5s;width:10px;height:10px;"></span>
+  </div>
+  <div class="hero-content">
+    <div class="hero-badge">🩺 AI-Powered Healthcare Platform 2024</div>
+    <h1>Smart Health <span>Monitoring</span> &amp; Teleconsultation</h1>
+    <p>Real-time vital tracking, AI-powered anomaly detection, and seamless doctor consultations — healthcare reimagined for the modern era.</p>
+    <div class="hero-btns">
+      <a href="{{ url_for('register') }}" class="btn-hero-primary">🚀 Get Started Free</a>
+      <a href="{{ url_for('services') }}" class="btn-hero-secondary">⚕️ Explore Services</a>
+    </div>
+    <div class="hero-stats">
+      <div class="hero-stat"><div class="number">15K+</div><div class="label">Active Patients</div></div>
+      <div class="hero-stat"><div class="number">500+</div><div class="label">Doctors Online</div></div>
+      <div class="hero-stat"><div class="number">99.8%</div><div class="label">AI Accuracy</div></div>
+      <div class="hero-stat"><div class="number">24/7</div><div class="label">Health Monitor</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- Features Section -->
+<section class="section">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-badge">🌟 Platform Features</div>
+      <h2>Everything You Need For <span>Smart Healthcare</span></h2>
+      <p>Our comprehensive platform combines cutting-edge technology with compassionate care for better health outcomes.</p>
+    </div>
+    <div class="feature-grid">
+      <div class="feature-card fade-in">
+        <div class="feature-icon">❤️</div>
+        <h4>Real-Time Vital Monitoring</h4>
+        <p>Continuous tracking of heart rate, blood pressure, SpO₂, temperature, and glucose levels using advanced wearable sensors.</p>
+      </div>
+      <div class="feature-card fade-in" style="animation-delay:.1s">
+        <div class="feature-icon">🤖</div>
+        <h4>AI-Powered Analysis</h4>
+        <p>Machine learning algorithms detect abnormalities, predict health risks, and provide early warning alerts before conditions worsen.</p>
+      </div>
+      <div class="feature-card fade-in" style="animation-delay:.2s">
+        <div class="feature-icon">📹</div>
+        <h4>Live Teleconsultation</h4>
+        <p>Connect with certified doctors via HD video, audio calls, or chat. Get prescriptions and medical advice from home.</p>
+      </div>
+      <div class="feature-card fade-in" style="animation-delay:.3s">
+        <div class="feature-icon">🎫</div>
+        <h4>Token Appointment System</h4>
+        <p>Smart token-based queue management for seamless appointment booking with real-time waiting time tracking.</p>
+      </div>
+      <div class="feature-card fade-in" style="animation-delay:.4s">
+        <div class="feature-icon">🚨</div>
+        <h4>Emergency Response</h4>
+        <p>Instant emergency alerts with GPS location sharing. Automatic connection to nearby doctors and emergency services.</p>
+      </div>
+      <div class="feature-card fade-in" style="animation-delay:.5s">
+        <div class="feature-icon">📋</div>
+        <h4>Digital Health Records</h4>
+        <p>Secure cloud storage for all prescriptions, reports, and medical histories. Access anytime, anywhere, securely.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- How It Works -->
+<section class="section section-alt">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-badge">⚙️ How It Works</div>
+      <h2>Your Health Journey <span>Simplified</span></h2>
+      <p>From sensor data collection to doctor consultation — all in one seamless workflow.</p>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1.5rem;text-align:center;">
+      {% set steps = [
+        ('1','📝','Register & Login','Create your patient profile with basic health information.'),
+        ('2','📡','Connect Sensors','Link your wearable health sensors to the platform.'),
+        ('3','📊','Monitor Vitals','View real-time vital signs on your personal dashboard.'),
+        ('4','🤖','AI Analysis','Our AI detects anomalies and predicts health risks.'),
+        ('5','👨‍⚕️','Consult Doctor','Book appointment or start instant teleconsultation.'),
+        ('6','💊','Get Treatment','Receive prescriptions and personalized health plans.')
+      ] %}
+      {% for num, icon, title, desc in steps %}
+      <div style="background:#fff;border-radius:var(--radius-lg);padding:2rem 1.5rem;box-shadow:var(--shadow-card);border:1px solid var(--gray-200);position:relative;transition:var(--trans);" onmouseover="this.style.transform='translateY(-6px)';this.style.boxShadow='var(--shadow-lg)'" onmouseout="this.style.transform='';this.style.boxShadow='var(--shadow-card)'">
+        <div style="position:absolute;top:-1px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,var(--pink-500),var(--pink-600));color:#fff;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:800;">{{ num }}</div>
+        <div style="font-size:2.5rem;margin:1rem 0 .75rem;">{{ icon }}</div>
+        <h4 style="font-family:var(--font-heading);font-weight:700;color:var(--gray-900);margin-bottom:.5rem;">{{ title }}</h4>
+        <p style="color:var(--gray-500);font-size:.85rem;line-height:1.7;">{{ desc }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- Health Modules Section -->
+<section class="section">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-badge">🏥 System Modules</div>
+      <h2>Comprehensive <span>Healthcare Modules</span></h2>
+      <p>Every aspect of your health covered by our specialized modules.</p>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.5rem;">
+      {% set modules = [
+        ('💓','Heart Rate Monitor','Continuous ECG-style monitoring with anomaly detection and trend analysis.','#ffd6e7','#c2185b'),
+        ('🩸','Blood Pressure','Automated BP readings with hypertension risk assessment and alerts.','#dce8ff','#1565c0'),
+        ('🌡️','Temperature Tracking','Body temperature monitoring with fever detection and fever-timeline recording.','#ffe8c8','#e65100'),
+        ('💨','SpO₂ Monitoring','Blood oxygen saturation levels with low-oxygen emergency alerts.','#d7f5e3','#2e7d32'),
+        ('🧪','Glucose Management','Blood glucose tracking with diabetes risk prediction and diet suggestions.','#f3e8ff','#6b21a8'),
+        ('📹','Teleconsultation','HD video/audio calls with doctors, chat, and online prescription sharing.','#e1f5fe','#0277bd'),
+        ('🎫','Token System','Smart appointment queue with estimated wait times and real-time updates.','#fff8e1','#ff8f00'),
+        ('🚨','Emergency Module','One-tap SOS with GPS location, instant doctor connection, and alert system.','#fce4ec','#880e4f'),
+      ] %}
+      {% for icon, title, desc, bg, color in modules %}
+      <div style="background:{{ bg }};border-radius:var(--radius-md);padding:1.5rem;border-left:4px solid {{ color }};transition:var(--trans);" onmouseover="this.style.transform='translateX(6px)'" onmouseout="this.style.transform=''">
+        <div style="font-size:1.8rem;margin-bottom:.75rem;">{{ icon }}</div>
+        <h4 style="font-family:var(--font-heading);font-weight:700;color:var(--gray-900);margin-bottom:.5rem;">{{ title }}</h4>
+        <p style="color:var(--gray-600);font-size:.88rem;line-height:1.7;">{{ desc }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- Doctors Section -->
+<section class="section section-alt">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-badge">👨‍⚕️ Our Specialists</div>
+      <h2>Connect With <span>Expert Doctors</span></h2>
+      <p>Board-certified physicians available 24/7 for teleconsultation.</p>
+    </div>
+    <div class="doctors-grid">
+      {% set doctors = [
+        ('👩‍⚕️','Dr. Sarah Johnson','Cardiology','Available','Exp: 15 Years | 4.9 ⭐'),
+        ('👨‍⚕️','Dr. Michael Chen','Neurology','Available','Exp: 12 Years | 4.8 ⭐'),
+        ('👩‍⚕️','Dr. Priya Patel','General Medicine','Busy','Exp: 10 Years | 4.9 ⭐'),
+        ('👨‍⚕️','Dr. James Wilson','Orthopedics','Available','Exp: 20 Years | 4.7 ⭐'),
+      ] %}
+      {% for avatar, name, spec, status, exp in doctors %}
+      <div class="doctor-card">
+        <div class="doctor-avatar">{{ avatar }}</div>
+        <h4>{{ name }}</h4>
+        <div class="specialty">{{ spec }}</div>
+        <div class="doctor-status">
+          <div class="status-dot {% if status == 'Available' %}available{% elif status == 'Busy' %}busy{% else %}offline{% endif %}"></div>
+          {{ status }}
+        </div>
+        <div style="font-size:.82rem;color:var(--gray-500);margin-bottom:1.25rem;">{{ exp }}</div>
+        <a href="{{ url_for('register') }}" class="btn btn-primary btn-sm w-100">Book Consultation</a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- CTA Section -->
+<section style="background:linear-gradient(135deg,var(--pink-700),var(--pink-500));padding:5rem 2rem;text-align:center;">
+  <div class="container">
+    <div class="hero-badge" style="margin-bottom:1.5rem;">🚀 Join 15,000+ Patients</div>
+    <h2 style="font-family:var(--font-heading);font-size:2.5rem;font-weight:800;color:#fff;margin-bottom:1rem;">Start Your Smart Health Journey Today</h2>
+    <p style="color:rgba(255,255,255,.85);font-size:1.05rem;margin-bottom:2.5rem;">Get real-time health monitoring, AI insights, and instant doctor access — all in one place.</p>
+    <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
+      <a href="{{ url_for('register') }}" class="btn-hero-primary">📝 Register as Patient</a>
+      <a href="{{ url_for('register') }}" class="btn-hero-secondary">🩺 Register as Doctor</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

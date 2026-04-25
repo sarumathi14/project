@@ -1,0 +1,87 @@
+{% if session['role'] == 'patient' %}
+    {% extends "patient/base_patient.html" %}
+{% elif session['role'] == 'doctor' %}
+    {% extends "doctor/base_doctor.html" %}
+{% else %}
+    {% extends "base.html" %}
+{% endif %}
+
+{% block title %}Messages{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="breadcrumb"><a href="{{ url_for('patient_dashboard' if session['role'] == 'patient' else 'doctor_dashboard') }}">Dashboard</a><span>›</span>Messages</div>
+  <h1>💬 Your Conversations</h1>
+  <p>Communicate with your doctors and patients directly</p>
+</div>
+
+<div class="card">
+  <div class="card-body" style="padding: 0;">
+    <div style="border-bottom: 1px solid var(--gray-100); padding: 1.5rem; background: var(--pink-50);">
+      <h5 style="margin: 0; color: var(--pink-700);">All Messages</h5>
+    </div>
+    <div style="max-height: 600px; overflow-y: auto;">
+      {% if contacts %}
+        {% for c in contacts %}
+        <a href="{{ url_for('chat_session', target_id=c.id) }}" style="text-decoration: none; display: flex; align-items: center; padding: 1.5rem; border-bottom: 1px solid var(--gray-50); transition: background 0.2s;" onmouseover="this.style.background='var(--pink-50)'" onmouseout="this.style.background='transparent'">
+          <div style="width: 50px; height: 50px; background: var(--pink-200); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-right: 1.25rem;">
+            {% if c.role == 'doctor' %}👨‍⚕️{% else %}🧑‍⚕️{% endif %}
+          </div>
+          <div style="flex: 1;">
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+              <h5 style="margin: 0; color: var(--gray-900);">{{ c.name }}</h5>
+              <div id="statusDot-{{ c.id }}" class="status-dot offline" style="width: 8px; height: 8px; border-radius: 50%;"></div>
+            </div>
+            <div style="font-size: 0.85rem; color: var(--gray-500);">
+              {% if c.role == 'doctor' %}
+                {{ c.specialization or 'Specialist' }}
+              {% else %}
+                Age: {{ c.age or '-' }} | {{ c.gender or '-' }} | {{ c.phone or '-' }}
+              {% endif %}
+            </div>
+          </div>
+          <div style="text-align: right;">
+            <span class="btn btn-sm btn-outline-pink">Chat Now</span>
+          </div>
+        </a>
+        <style>
+          .status-dot.online { background: #00c853; box-shadow: 0 0 8px #00c853; }
+          .status-dot.offline { background: #bdbdbd; }
+        </style>
+        {% endfor %}
+      {% else %}
+        <div style="padding: 4rem; text-align: center; color: var(--gray-400);">
+          <div style="font-size: 4rem; opacity: 0.4; margin-bottom: 1rem;">💬</div>
+          <h5>No active conversations yet.</h5>
+          <p>Start a consultation or book an appointment to begin chatting.</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<script>
+socket.on('connect', () => {
+    // Check status for all contacts
+    const contactIds = [
+        {% for c in contacts %}{{ c.id }}{% if not loop.last %},{% endif %}{% endfor %}
+    ];
+    contactIds.forEach(id => {
+        fetch(`/api/user_status/${id}`).then(r=>r.json()).then(data => {
+            updateListStatus(id, data.status);
+        });
+    });
+});
+
+socket.on('user_status_change', (data) => {
+    updateListStatus(data.user_id, data.status);
+});
+
+function updateListStatus(id, status) {
+    const dot = document.getElementById(`statusDot-${id}`);
+    if (dot) {
+        dot.className = `status-dot ${status}`;
+    }
+}
+</script>
+{% endblock %}

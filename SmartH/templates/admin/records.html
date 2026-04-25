@@ -1,0 +1,31 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Health Records{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="breadcrumb"><a href="{{ url_for('admin_dashboard') }}">Dashboard</a><span>›</span>Health Records</div>
+  <h1>📋 Health Records</h1>
+  <p>All patient health records, prescriptions, and diagnoses</p>
+</div>
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr><th>#</th><th>Patient</th><th>Doctor</th><th>Diagnosis</th><th>Prescription</th><th>Notes</th><th>Date</th></tr>
+    </thead>
+    <tbody>
+      {% for r in records %}
+      <tr>
+        <td style="color:var(--gray-400)">{{ loop.index }}</td>
+        <td><strong>{{ r.patient_name }}</strong></td>
+        <td>{{ r.doctor_name }}</td>
+        <td><span class="badge badge-info">{{ r.diagnosis or '—' }}</span></td>
+        <td style="font-size:.85rem;">{{ r.prescription or '—' }}</td>
+        <td style="font-size:.82rem;color:var(--gray-500)">{{ r.notes or '—' }}</td>
+        <td style="font-size:.82rem;color:var(--gray-500)">{{ r.created_at[:10] if r.created_at else '-' }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--gray-400);">No records found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

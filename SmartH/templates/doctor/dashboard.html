@@ -1,0 +1,240 @@
+{% extends "doctor/base_doctor.html" %}
+{% block title %}Doctor Dashboard{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="breadcrumb"><a href="{{ url_for('home') }}">Home</a><span>›</span>Doctor Dashboard</div>
+  <h1>🩺 Welcome, {{ user.name }}</h1>
+  <p>{{ user.specialization or 'General Medicine' }} — Doctor Panel <span class="live-dot" style="margin-left:10px;">ONLINE</span></p>
+</div>
+
+<!-- Real-time Consultation Room (Hidden by default) -->
+<div id="consultRoom" style="display:none; margin-bottom: 2rem;">
+  <div class="consult-room">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+      <h3 style="color:#fff;font-family:var(--font-heading);" id="consultTitle">Consultation</h3>
+      <div class="live-dot" style="color:#00c853;">CONNECTED</div>
+    </div>
+
+    <div class="video-grid">
+      <!-- Remote Patient Video -->
+      <div class="video-panel">
+        <video id="remoteVideo" autoplay playsinline style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius-md);background:#000;display:none;"></video>
+        <div class="video-placeholder" id="videoPlaceholder">
+          <div class="video-avatar" id="patientAvatar">🧑</div>
+          <div id="patientNameDisplay">Patient Name</div>
+          <div style="font-size:.78rem;opacity:.6;" id="feedType">Video Feed</div>
+        </div>
+      </div>
+      <!-- Chat Panel -->
+      <div class="chat-box">
+        <div style="padding:.75rem 1rem;border-bottom:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.8);font-size:.85rem;font-weight:600;">💬 Chat</div>
+        <div class="chat-messages" id="chatMessages"></div>
+        <div id="typingIndicator" style="display:none; padding: .5rem 1rem; font-size: .8rem; color: var(--gray-500); font-style: italic;">Patient is typing...</div>
+        <div class="chat-input">
+          <input type="text" id="chatInput" placeholder="Type a message..." onkeydown="handleTyping(event)">
+          <button class="btn btn-primary btn-sm" onclick="sendMsg()">➤</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Doctor's Self video -->
+    <div style="margin-top:1rem;display:flex;justify-content:flex-end;">
+      <div class="video-panel" style="width:200px;height:120px;">
+        <video id="localVideo" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius-md);background:#000;display:none;"></video>
+        <div class="video-placeholder" id="localPlaceholder" style="font-size:.78rem;">
+          <div class="video-avatar" style="width:40px;height:40px;font-size:1rem;">🩺</div>
+          <div>You</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="consult-controls">
+      <button class="ctrl-btn active" id="muteBtn" onclick="toggleMute()">🎤</button>
+      <button class="ctrl-btn active" id="camBtn" onclick="toggleCam()">📷</button>
+      <button class="ctrl-btn end" title="End Call" onclick="endCall()">📵 End Call</button>
+    </div>
+  </div>
+</div>
+
+<div class="stat-cards">
+  <div class="stat-card"><div class="stat-icon pink">🧑‍🤝‍🧑</div><div class="stat-info"><div class="value">{{ total_patients }}</div><div class="label">Total Patients</div></div></div>
+  <div class="stat-card"><div class="stat-icon orange">📅</div><div class="stat-info"><div class="value">{{ pending }}</div><div class="label">Pending Tokens</div></div></div>
+  <div class="stat-card"><div class="stat-icon green">✅</div><div class="stat-info"><div class="value">{{ appointments|length }}</div><div class="label">Appointments</div></div></div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h5>📅 Upcoming Appointments</h5>
+    <a href="{{ url_for('doctor_appointments') }}" class="btn btn-sm btn-outline-pink">View All</a>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Patient</th><th>Date</th><th>Reason</th><th>Token</th><th>Status</th></tr></thead>
+      <tbody>
+        {% for a in appointments %}
+        <tr>
+          <td><strong>{{ a.patient_name }}</strong></td>
+          <td>{{ a.date or '—' }}</td>
+          <td>{{ a.reason or '—' }}</td>
+          <td><span class="badge badge-pink">#{{ a.token_number }}</span></td>
+          <td><span class="badge {% if a.status=='completed' %}badge-success{% elif a.status=='pending' %}badge-warning{% elif a.status=='cancelled' %}badge-danger{% else %}badge-info{% endif %}">{{ a.status }}</span></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--gray-400);">No appointments yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentPatientId = null;
+let currentCallType = null;
+let localStream = null;
+let peerConnection;
+const rtcConfig = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+
+// Check if redirected to start a call
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.get('start_call')) {
+  currentPatientId = urlParams.get('patient_id');
+  currentCallType = urlParams.get('type');
+  startConsultation();
+}
+
+async function startConsultation() {
+  document.getElementById('consultRoom').style.display = 'block';
+  document.getElementById('consultTitle').textContent = `${currentCallType.toUpperCase()} Consultation`;
+  
+  if (currentCallType === 'video' || currentCallType === 'voice') {
+    await startMedia(currentCallType === 'video');
+  }
+  document.getElementById('consultRoom').scrollIntoView({behavior:'smooth'});
+}
+
+async function startMedia(video) {
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({ video: video, audio: true });
+    const lv = document.getElementById('localVideo');
+    lv.srcObject = localStream;
+    lv.style.display = 'block';
+    document.getElementById('localPlaceholder').style.display = 'none';
+  } catch (e) {
+    console.warn('Media access denied', e);
+    alert('Could not access camera/microphone');
+  }
+}
+
+socket.on('webrtc_signal', async (data) => {
+  if (!peerConnection) {
+    peerConnection = new RTCPeerConnection(rtcConfig);
+    if (localStream) localStream.getTracks().forEach(t => peerConnection.addTrack(t, localStream));
+    
+    peerConnection.ontrack = e => {
+      document.getElementById('remoteVideo').srcObject = e.streams[0];
+      document.getElementById('remoteVideo').style.display = 'block';
+      document.getElementById('videoPlaceholder').style.display = 'none';
+    };
+    
+    peerConnection.onicecandidate = e => {
+      if (e.candidate) socket.emit('webrtc_signal', { target_id: currentPatientId, signal: { ice: e.candidate } });
+    };
+  }
+  
+  if (data.signal.offer) {
+    await peerConnection.setRemoteDescription(new RTCSessionDescription(data.signal.offer));
+    const answer = await peerConnection.createAnswer();
+    await peerConnection.setLocalDescription(answer);
+    socket.emit('webrtc_signal', { target_id: currentPatientId, signal: { answer: answer } });
+  } else if (data.signal.ice) {
+    await peerConnection.addIceCandidate(new RTCIceCandidate(data.signal.ice));
+  }
+});
+
+function sendMsg() {
+  const inp = document.getElementById('chatInput');
+  const msg = inp.value.trim();
+  if (!msg || !currentPatientId) return;
+  
+  socket.emit('typing', { target_id: currentPatientId, is_typing: false });
+  socket.emit('send_message', { target_id: currentPatientId, message: msg, file_type: 'text' });
+  addMsg('sent', 'You', msg);
+  inp.value = '';
+}
+
+let typingTimeout;
+function handleTyping(event) {
+  if (event.key === 'Enter') {
+    sendMsg();
+    return;
+  }
+  if (!currentPatientId) return;
+  
+  socket.emit('typing', { target_id: currentPatientId, is_typing: true });
+  clearTimeout(typingTimeout);
+  typingTimeout = setTimeout(() => {
+    socket.emit('typing', { target_id: currentPatientId, is_typing: false });
+  }, 2000);
+}
+
+socket.on('is_typing', (data) => {
+  const indicator = document.getElementById('typingIndicator');
+  if (data.is_typing) {
+    indicator.style.display = 'block';
+  } else {
+    indicator.style.display = 'none';
+  }
+});
+
+socket.on('receive_message', (data) => {
+  if (!currentPatientId) {
+     currentPatientId = data.from_id;
+     document.getElementById('consultRoom').style.display = 'block';
+  }
+  addMsg('received', data.from_name, data.message);
+});
+
+function addMsg(type, name, msg) {
+  const container = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = `chat-msg ${type}`;
+  div.innerHTML = `<strong>${name}:</strong> ${msg}`;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+function endCall() {
+  if (localStream) {
+    localStream.getTracks().forEach(t => t.stop());
+  }
+  if (peerConnection) {
+    peerConnection.close();
+  }
+  document.getElementById('consultRoom').style.display = 'none';
+  currentPatientId = null;
+  window.history.replaceState({}, document.title, window.location.pathname);
+  location.reload();
+}
+
+function toggleMute() {
+  if (localStream) {
+    const audioTrack = localStream.getAudioTracks()[0];
+    audioTrack.enabled = !audioTrack.enabled;
+    document.getElementById('muteBtn').classList.toggle('active');
+  }
+}
+
+function toggleCam() {
+  if (localStream) {
+    const videoTrack = localStream.getVideoTracks()[0];
+    if (videoTrack) {
+      videoTrack.enabled = !videoTrack.enabled;
+      document.getElementById('camBtn').classList.toggle('active');
+    }
+  }
+}
+</script>
+{% endblock %}

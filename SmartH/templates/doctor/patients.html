@@ -1,0 +1,21 @@
+{% extends "doctor/base_doctor.html" %}
+{% block title %}My Patients{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="breadcrumb"><a href="{{ url_for('doctor_dashboard') }}">Dashboard</a><span>›</span>Patients</div>
+  <h1>🧑‍🤝‍🧑 My Patients</h1>
+</div>
+<div class="doctors-grid">
+  {% for p in patients %}
+  <div class="doctor-card">
+    <div class="doctor-avatar">{% if p.gender == 'Female' %}👩{% else %}👨{% endif %}</div>
+    <h4>{{ p.name }}</h4>
+    <div class="specialty">Age: {{ p.age or '—' }} | {{ p.gender or '—' }}</div>
+    <div style="font-size:.82rem;color:var(--gray-500);margin-bottom:1rem;">{{ p.email }}</div>
+    <a href="{{ url_for('doctor_prescribe') }}" class="btn btn-primary btn-sm w-100">📝 Write Prescription</a>
+  </div>
+  {% else %}
+  <div style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--gray-400);">No patients yet.</div>
+  {% endfor %}
+</div>
+{% endblock %}

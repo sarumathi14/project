@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}About Us{% endblock %}
+{% block content %}
+<section style="background:linear-gradient(135deg,var(--pink-700),var(--pink-500));padding:4rem 2rem;text-align:center;">
+  <div class="hero-badge" style="margin-bottom:1rem;">ℹ️ About SmartHealth</div>
+  <h1 style="font-family:var(--font-heading);font-size:2.8rem;font-weight:800;color:#fff;margin-bottom:1rem;">Revolutionizing <span style="color:var(--pink-100)">Healthcare</span> with Technology</h1>
+  <p style="color:rgba(255,255,255,.85);font-size:1.05rem;max-width:540px;margin:0 auto;">We combine AI, IoT, and telemedicine to bring world-class healthcare to everyone, everywhere.</p>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:center;">
+      <div>
+        <div class="section-badge">🎯 Our Mission</div>
+        <h2 style="font-family:var(--font-heading);font-size:2rem;font-weight:800;margin-bottom:1rem;">Making Healthcare <span style="color:var(--pink-500)">Accessible</span> to All</h2>
+        <p style="color:var(--gray-600);line-height:1.9;margin-bottom:1rem;">Our platform addresses the critical need for timely, continuous healthcare monitoring — especially for elderly patients, chronically ill individuals, and people in remote areas.</p>
+        <p style="color:var(--gray-600);line-height:1.9;">Through wearable sensors, AI-powered analysis, and telemedicine, we enable early disease detection, remote consultations, and faster emergency response.</p>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+        {% for icon, val, label in [('🧑‍🤝‍🧑','15K+','Patients'),('🩺','500+','Doctors'),('🤖','99.8%','AI Accuracy'),('🚨','<2min','Emergency Response')] %}
+        <div style="background:linear-gradient(135deg,var(--pink-500),var(--pink-600));border-radius:var(--radius-lg);padding:1.75rem;text-align:center;color:#fff;">
+          <div style="font-size:2rem;margin-bottom:.5rem;">{{ icon }}</div>
+          <div style="font-size:1.8rem;font-weight:800;font-family:var(--font-heading);">{{ val }}</div>
+          <div style="font-size:.82rem;opacity:.85;">{{ label }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-badge">⚙️ System Architecture</div>
+      <h2>How Our <span>Platform Works</span></h2>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1.25rem;">
+      {% set arch = [
+        ('📡','Wearable Sensors','Heart rate, BP, SpO₂, temperature, glucose sensors'),
+        ('🔄','Data Acquisition','Real-time health data collection and transmission'),
+        ('🤖','AI Processing','Anomaly detection, pattern recognition, risk prediction'),
+        ('☁️','Cloud Storage','Secure storage of all patient health data and records'),
+        ('📊','Patient Portal','Personal dashboard with live vitals and health insights'),
+        ('📹','Teleconsultation','Video/audio/chat with certified doctors'),
+        ('🚨','Emergency Module','GPS-enabled SOS alerts with instant doctor connection'),
+        ('👨‍⚕️','Doctor Panel','Complete patient management and prescription system'),
+      ] %}
+      {% for icon, title, desc in arch %}
+      <div style="background:#fff;border-radius:var(--radius-md);padding:1.5rem;box-shadow:var(--shadow-card);border:1px solid var(--gray-200);">
+        <div style="font-size:1.8rem;margin-bottom:.75rem;">{{ icon }}</div>
+        <h4 style="font-family:var(--font-heading);font-weight:700;font-size:.95rem;margin-bottom:.4rem;">{{ title }}</h4>
+        <p style="color:var(--gray-500);font-size:.82rem;line-height:1.7;">{{ desc }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-badge">✅ Key Benefits</div>
+      <h2>Why Choose <span>SmartHealth</span>?</h2>
+    </div>
+    <div class="feature-grid">
+      {% set benefits = [('🏃','Early Disease Detection','AI detects health anomalies before they become critical conditions.'),('🌍','Improved Accessibility','Remote monitoring eliminates barriers of geography and mobility.'),('🏥','Reduced Hospital Visits','Virtual consultations reduce unnecessary emergency room visits.'),('⚡','Fast Emergency Response','GPS-enabled SOS connects you to help in under 2 minutes.'),('📱','24/7 Monitoring','Continuous health tracking even while you sleep.'),('🔒','HIPAA Compliant','Your health data is encrypted and fully protected.')]%}
+      {% for icon, title, desc in benefits %}
+      <div class="feature-card">
+        <div class="feature-icon">{{ icon }}</div>
+        <h4>{{ title }}</h4>
+        <p>{{ desc }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

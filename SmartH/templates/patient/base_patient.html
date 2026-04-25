@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Patient{% endblock %} | SmartHealth Patient Portal</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.socketio.org/4.7.2/socketio.min.js"></script>
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+  <nav class="navbar">
+    <a href="{{ url_for('home') }}" class="navbar-brand">
+      <div class="brand-icon">💊</div>
+      <div class="brand-text">Smart<span>Health</span></div>
+    </a>
+    <ul class="navbar-nav">
+      <li><a href="{{ url_for('patient_dashboard') }}" {% if request.endpoint=='patient_dashboard' %}class="active"{% endif %}>🏠 Dashboard</a></li>
+      <li><a href="{{ url_for('patient_vitals') }}" {% if request.endpoint=='patient_vitals' %}class="active"{% endif %}>❤️ Vitals</a></li>
+      <li><a href="{{ url_for('patient_appointments') }}" {% if request.endpoint=='patient_appointments' %}class="active"{% endif %}>📅 Appointments</a></li>
+      <li><a href="{{ url_for('patient_teleconsult') }}" {% if request.endpoint=='patient_teleconsult' %}class="active"{% endif %}>📹 Consult</a></li>
+      <li><a href="{{ url_for('patient_records') }}" {% if request.endpoint=='patient_records' %}class="active"{% endif %}>📋 Records</a></li>
+      <li><a href="{{ url_for('chat_list') }}" {% if request.endpoint=='chat_list' %}class="active"{% endif %}>💬 Messages</a></li>
+      <li><a href="{{ url_for('patient_health_profile') }}" {% if request.endpoint=='patient_health_profile' %}class="active"{% endif %}>👤 Profile</a></li>
+      <li><a href="{{ url_for('patient_emergency') }}" {% if request.endpoint=='patient_emergency' %}class="active"{% endif %}>🚨 Emergency</a></li>
+    </ul>
+    <div class="navbar-actions">
+      <span style="color:rgba(255,255,255,.85);font-size:.85rem;">🧑 {{ session.name }}</span>
+      <a href="{{ url_for('logout') }}" class="btn-nav">🚪 Logout</a>
+    </div>
+  </nav>
+
+  <div id="flash-container" style="padding:0 1rem;">
+    {% for cat, msg in get_flashed_messages(with_categories=True) %}
+    <div class="alert alert-{{ cat }}" style="margin:0;border-radius:0;">{{ msg }}</div>
+    {% endfor %}
+  </div>
+
+  <div class="layout-wrapper">
+    <nav class="sidebar">
+      <div class="sidebar-brand">
+        <div style="font-size:.85rem;font-weight:700;color:#fff;margin-bottom:.4rem;">{{ session.name }}</div>
+        <div class="role-badge">🧑 Patient Portal</div>
+      </div>
+      <ul class="sidebar-nav">
+        <li class="sidebar-section-title">My Health</li>
+        <li><a href="{{ url_for('patient_dashboard') }}" {% if request.endpoint=='patient_dashboard' %}class="active"{% endif %}><span class="nav-icon">🏠</span>Dashboard</a></li>
+        <li><a href="{{ url_for('patient_vitals') }}" {% if request.endpoint=='patient_vitals' %}class="active"{% endif %}><span class="nav-icon">❤️</span>Vital Signs</a></li>
+        <li><a href="{{ url_for('patient_records') }}" {% if request.endpoint=='patient_records' %}class="active"{% endif %}><span class="nav-icon">📋</span>Health Records</a></li>
+        <li><a href="{{ url_for('patient_health_profile') }}" {% if request.endpoint=='patient_health_profile' %}class="active"{% endif %}><span class="nav-icon">👤</span>Health Profile</a></li>
+        <div class="sidebar-divider"></div>
+        <li class="sidebar-section-title">Consultations</li>
+        <li><a href="{{ url_for('patient_appointments') }}" {% if request.endpoint=='patient_appointments' %}class="active"{% endif %}><span class="nav-icon">📅</span>Appointments</a></li>
+        <li><a href="{{ url_for('chat_list') }}" {% if request.endpoint=='chat_list' %}class="active"{% endif %}><span class="nav-icon">💬</span>Teleconsultation</a></li>
+        <div class="sidebar-divider"></div>
+        <li class="sidebar-section-title">Safety</li>
+        <li><a href="{{ url_for('patient_emergency') }}" {% if request.endpoint=='patient_emergency' %}class="active"{% endif %}><span class="nav-icon">🚨</span>Emergency SOS</a></li>
+        <div class="sidebar-divider"></div>
+        <li><a href="{{ url_for('home') }}"><span class="nav-icon">🏥</span>Home</a></li>
+        <li><a href="{{ url_for('logout') }}"><span class="nav-icon">🚪</span>Logout</a></li>
+      </ul>
+    </nav>
+    <main class="main-content">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+
+  <script>
+    const socket = io();
+    setTimeout(() => {
+      document.querySelectorAll('#flash-container .alert').forEach(f => { f.style.transition='all .5s'; f.style.opacity='0'; f.style.maxHeight='0'; f.style.padding='0'; setTimeout(()=>f.remove(),500); });
+    }, 4000);
+  </script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

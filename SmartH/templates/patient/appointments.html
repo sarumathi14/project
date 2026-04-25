@@ -1,0 +1,98 @@
+{% extends "patient/base_patient.html" %}
+{% block title %}Appointments{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="breadcrumb"><a href="{{ url_for('patient_dashboard') }}">Dashboard</a><span>›</span>Appointments</div>
+  <h1>📅 Appointments & Token System</h1>
+  <p>Book doctor appointments and track your token queue</p>
+</div>
+
+<!-- Book Appointment -->
+<div class="chart-grid mb-3">
+  <div class="card">
+    <div class="card-header"><h5>📝 Book New Appointment</h5></div>
+    <div class="card-body">
+      <form method="POST">
+        <div class="form-group">
+          <label class="form-label">🩺 Select Doctor</label>
+          <select name="doctor_id" class="form-control" id="docSel" required>
+            <option value="">-- Choose Doctor --</option>
+            {% for d in doctors %}
+            <option value="{{ d.id }}">{{ d.name }} — {{ d.specialization or 'General' }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">📅 Appointment Date</label>
+            <input type="date" name="date" class="form-control" required min="{{ '' }}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">💬 Reason</label>
+            <input type="text" name="reason" class="form-control" placeholder="e.g., General checkup">
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary">🎫 Book & Get Token</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Token Status Widget -->
+  <div class="card">
+    <div class="card-header"><h5>🎫 Live Token Status</h5></div>
+    <div class="card-body" style="text-align:center;">
+      <div class="token-display mb-2" style="max-width:100%;">
+        <div class="token-label">Current Serving Token</div>
+        <div class="token-number" id="currentToken">—</div>
+        <div class="token-label">Est. Wait: <span id="waitTime">—</span> min</div>
+      </div>
+      <div style="font-size:.85rem;color:var(--gray-600);margin-top:.75rem;">
+        Patients waiting: <strong id="waitingCount">—</strong>
+      </div>
+      <button class="btn btn-outline-pink mt-2" onclick="refreshToken()">🔄 Refresh Token Status</button>
+    </div>
+  </div>
+</div>
+
+<!-- Appointments Table -->
+<div class="card">
+  <div class="card-header"><h5>📋 My Appointments History</h5></div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>#</th><th>Doctor</th><th>Date</th><th>Reason</th><th>Token</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        {% for a in appointments %}
+        <tr>
+          <td style="color:var(--gray-400)">{{ loop.index }}</td>
+          <td><strong>{{ a.doctor_name }}</strong></td>
+          <td>{{ a.date or '—' }}</td>
+          <td>{{ a.reason or '—' }}</td>
+          <td><span class="badge badge-pink">#{{ a.token_number }}</span></td>
+          <td><span class="badge {% if a.status=='completed' %}badge-success{% elif a.status=='pending' %}badge-warning{% elif a.status=='cancelled' %}badge-danger{% else %}badge-info{% endif %}">{{ a.status }}</span></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--gray-400);">No appointments yet. Book your first one!</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function refreshToken() {
+  const sel = document.getElementById('docSel');
+  const docId = sel.value;
+  if (!docId) { alert('Please select a doctor first.'); return; }
+  const res = await fetch('/api/token/status/' + docId);
+  const data = await res.json();
+  document.getElementById('currentToken').textContent = '#' + data.current_token;
+  document.getElementById('waitTime').textContent = data.estimated_wait;
+  document.getElementById('waitingCount').textContent = data.waiting;
+}
+document.getElementById('docSel').addEventListener('change', refreshToken);
+</script>
+{% endblock %}

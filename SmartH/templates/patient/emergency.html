@@ -1,0 +1,114 @@
+{% extends "patient/base_patient.html" %}
+{% block title %}Emergency SOS{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="breadcrumb"><a href="{{ url_for('patient_dashboard') }}">Dashboard</a><span>›</span>Emergency</div>
+  <h1>🚨 Emergency Response Module</h1>
+  <p>Send instant SOS alert with your GPS location to doctors and emergency services</p>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:2rem;" class="responsive-grid">
+  <!-- SOS Form -->
+  <div class="card">
+    <div class="card-header"><h5>🚨 Send Emergency Alert</h5></div>
+    <div class="card-body" style="text-align:center;">
+      <div style="margin-bottom:1.5rem;">
+        <div style="font-size:5rem;animation:pulse-btn 2s infinite;">🆘</div>
+        <p style="color:var(--gray-600);font-size:.9rem;margin-top:.75rem;">In a medical emergency, click the button below to instantly alert doctors and emergency services with your GPS location.</p>
+      </div>
+      <form method="POST" id="sosForm">
+        <input type="hidden" name="lat" id="lat" value="0">
+        <input type="hidden" name="lng" id="lng" value="0">
+        <div class="form-group" style="text-align:left;">
+          <label class="form-label">📝 Emergency Type</label>
+          <select name="message" class="form-control">
+            <option>Chest pain / Heart attack</option>
+            <option>Difficulty breathing</option>
+            <option>Severe bleeding</option>
+            <option>Loss of consciousness</option>
+            <option>Severe allergic reaction</option>
+            <option>Stroke symptoms</option>
+            <option>Other emergency</option>
+          </select>
+        </div>
+        <button type="button" class="emergency-btn" style="width:100%;justify-content:center;" onclick="sendSOS()">
+          🆘 SEND EMERGENCY SOS
+        </button>
+      </form>
+      <div style="margin-top:1rem;font-size:.85rem;color:var(--gray-500);">📍 GPS Location: <span id="gpsStatus">Detecting...</span></div>
+    </div>
+  </div>
+
+  <!-- Emergency Contacts -->
+  <div class="card">
+    <div class="card-header"><h5>📞 Emergency Contacts</h5></div>
+    <div class="card-body">
+      <div style="display:flex;flex-direction:column;gap:.75rem;">
+        {% set contacts = [
+          ('🚑','Ambulance','911','Emergency'),
+          ('🏥','SmartHealth ER','+1-800-HEALTH','24/7 Online'),
+          ('👮','Police','911','Emergency'),
+          ('🔥','Fire Department','911','Emergency'),
+        ] %}
+        {% for icon, name, phone, status in contacts %}
+        <div style="background:var(--pink-50);border-radius:var(--radius-sm);padding:1rem;display:flex;align-items:center;justify-content:space-between;">
+          <div style="display:flex;align-items:center;gap:.75rem;">
+            <div style="font-size:1.5rem;">{{ icon }}</div>
+            <div>
+              <div style="font-weight:700;font-size:.9rem;">{{ name }}</div>
+              <div style="font-size:.8rem;color:var(--gray-500);">{{ phone }}</div>
+            </div>
+          </div>
+          <span class="badge {% if status=='Emergency' %}badge-danger{% else %}badge-success{% endif %}">{{ status }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Alert History -->
+<div class="card">
+  <div class="card-header"><h5>📋 My Emergency Alert History</h5></div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>#</th><th>Message</th><th>Location</th><th>Status</th><th>Time</th></tr></thead>
+      <tbody>
+        {% for a in alerts %}
+        <tr>
+          <td style="color:var(--gray-400)">{{ loop.index }}</td>
+          <td>{{ a.message or 'Emergency Alert' }}</td>
+          <td style="font-size:.82rem">Lat: {{ a.lat }}, Lng: {{ a.lng }}</td>
+          <td><span class="badge {% if a.status=='sent' %}badge-warning{% else %}badge-success{% endif %}">{{ a.status }}</span></td>
+          <td style="font-size:.82rem">{{ a.created_at[:16] if a.created_at else '-' }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--gray-400);">No emergency alerts sent.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<style>
+@media(max-width:768px){.responsive-grid{grid-template-columns:1fr!important;}}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Get GPS
+if(navigator.geolocation){
+  navigator.geolocation.getCurrentPosition(
+    pos=>{ document.getElementById('lat').value=pos.coords.latitude.toFixed(6); document.getElementById('lng').value=pos.coords.longitude.toFixed(6); document.getElementById('gpsStatus').textContent=pos.coords.latitude.toFixed(4)+', '+pos.coords.longitude.toFixed(4); },
+    ()=>{ document.getElementById('gpsStatus').textContent='Location not available'; }
+  );
+} else { document.getElementById('gpsStatus').textContent='GPS not supported'; }
+
+function sendSOS(){
+  if(confirm('⚠️ Are you sure you want to send an EMERGENCY SOS alert?')){
+    document.getElementById('sosForm').submit();
+  }
+}
+</script>
+{% endblock %}

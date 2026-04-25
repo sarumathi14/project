@@ -1,0 +1,36 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Appointments{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="breadcrumb"><a href="{{ url_for('admin_dashboard') }}">Dashboard</a><span>›</span>Appointments</div>
+  <h1>📅 All Appointments</h1>
+  <p>Overview of all appointment bookings in the system</p>
+</div>
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr><th>#</th><th>Patient</th><th>Doctor</th><th>Date</th><th>Reason</th><th>Token</th><th>Status</th><th>Booked</th></tr>
+    </thead>
+    <tbody>
+      {% for a in appointments %}
+      <tr>
+        <td style="color:var(--gray-400)">{{ loop.index }}</td>
+        <td><strong>{{ a.patient_name }}</strong></td>
+        <td>{{ a.doctor_name }}</td>
+        <td>{{ a.date or '—' }}</td>
+        <td style="font-size:.85rem;">{{ a.reason or '—' }}</td>
+        <td><span class="badge badge-pink">#{{ a.token_number }}</span></td>
+        <td>
+          <span class="badge {% if a.status=='completed' %}badge-success{% elif a.status=='pending' %}badge-warning{% elif a.status=='cancelled' %}badge-danger{% else %}badge-info{% endif %}">
+            {{ a.status }}
+          </span>
+        </td>
+        <td style="font-size:.82rem;color:var(--gray-500)">{{ a.created_at[:10] if a.created_at else '-' }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--gray-400);">No appointments found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

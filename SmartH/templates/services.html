@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Services{% endblock %}
+{% block content %}
+<section style="background:linear-gradient(135deg,var(--pink-700),var(--pink-500));padding:4rem 2rem;text-align:center;">
+  <div class="hero-badge">⚕️ Our Services</div>
+  <h1 style="font-family:var(--font-heading);font-size:2.8rem;font-weight:800;color:#fff;margin:1rem 0;">Comprehensive <span style="color:var(--pink-100)">Health Services</span></h1>
+  <p style="color:rgba(255,255,255,.85);max-width:520px;margin:0 auto;">Everything you need for end-to-end health monitoring and teleconsultation — in one platform.</p>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-badge">🔬 Core Services</div>
+      <h2>What We <span>Offer</span></h2>
+    </div>
+    <div class="feature-grid">
+      {% set services = [
+        ('❤️','Real-Time Vital Monitoring','Continuous tracking of heart rate, blood pressure, SpO₂, temperature, and glucose using FDA-approved sensors.','Book Now'),
+        ('🤖','AI Health Analysis','Machine learning models analyze your vitals 24/7 to detect patterns and predict potential health risks early.','Learn More'),
+        ('📹','Video Teleconsultation','HD video calls with board-certified doctors. Get diagnosis, prescription, and follow-up — all online.','Start Consult'),
+        ('📞','Audio Consultation','Quick audio consultations for minor health queries without the need for video.','Call Now'),
+        ('💬','Chat with Doctor','Asynchronous messaging with your doctor for non-urgent queries and medication questions.','Chat Now'),
+        ('🎫','Token Appointment System','Smart queue management with real-time token tracking and estimated wait times.','Book Token'),
+        ('🚨','Emergency SOS','One-tap emergency button that shares your GPS location and connects you immediately to emergency services.','Emergency'),
+        ('📋','Digital Health Records','Secure, searchable digital records of all your prescriptions, diagnoses, and test reports.','View Records'),
+      ] %}
+      {% for icon, title, desc, cta in services %}
+      <div class="feature-card">
+        <div class="feature-icon">{{ icon }}</div>
+        <h4>{{ title }}</h4>
+        <p>{{ desc }}</p>
+        <a href="{{ url_for('register') }}" class="btn btn-outline-pink btn-sm mt-2">{{ cta }}</a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-badge">💓 Vital Sensors</div>
+      <h2>Health Sensors We <span>Monitor</span></h2>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.25rem;">
+      {% set sensors = [
+        ('❤️','Heart Rate Sensor','ECG-style optical sensor with real-time BPM monitoring','Normal: 60–100 BPM','#ffd6e7','var(--pink-600)'),
+        ('🩸','Blood Pressure Cuff','Automated oscillometric BP monitoring with trend analysis','Normal: 120/80 mmHg','#dbeafe','#1565c0'),
+        ('💨','SpO₂ Pulse Oximeter','Infrared blood oxygen saturation monitoring','Normal: 95–100%','#d7f5e3','#2e7d32'),
+        ('🌡️','Temperature Sensor','Digital thermometer with fever detection alerts','Normal: 36.1–37.2°C','#fde8d0','#e65100'),
+        ('🧪','Glucose Monitor','Continuous glucose monitoring with diabetes risk alerts','Normal: 70–126 mg/dL','#f3e8ff','#6b21a8'),
+      ] %}
+      {% for icon, name, desc, range, bg, color in sensors %}
+      <div style="background:{{ bg }};border-radius:var(--radius-md);padding:1.5rem;border-left:4px solid {{ color }};">
+        <div style="font-size:2rem;margin-bottom:.75rem;">{{ icon }}</div>
+        <h4 style="font-family:var(--font-heading);font-weight:700;color:var(--gray-900);margin-bottom:.4rem;">{{ name }}</h4>
+        <p style="color:var(--gray-600);font-size:.85rem;margin-bottom:.75rem;">{{ desc }}</p>
+        <div style="background:rgba(255,255,255,.6);border-radius:var(--radius-sm);padding:.5rem .75rem;font-size:.78rem;font-weight:700;color:{{ color }};">📊 {{ range }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section style="background:linear-gradient(135deg,var(--pink-700),var(--pink-500));padding:5rem 2rem;text-align:center;">
+  <h2 style="font-family:var(--font-heading);font-size:2.2rem;font-weight:800;color:#fff;margin-bottom:1rem;">Ready to Monitor Your Health?</h2>
+  <p style="color:rgba(255,255,255,.85);margin-bottom:2rem;">Join thousands of patients who trust SmartHealth for their daily health monitoring.</p>
+  <a href="{{ url_for('register') }}" class="btn-hero-primary">🚀 Get Started Free</a>
+</section>
+{% endblock %}

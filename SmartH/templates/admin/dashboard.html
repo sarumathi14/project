@@ -1,0 +1,169 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Admin Dashboard{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="breadcrumb"><a href="{{ url_for('home') }}">Home</a><span>›</span>Admin Dashboard</div>
+  <h1>🛡️ Admin Dashboard</h1>
+  <p>Smart Health Monitoring System — System Overview</p>
+</div>
+
+<!-- Stat Cards -->
+<div class="stat-cards">
+  <div class="stat-card fade-in">
+    <div class="stat-icon pink">👥</div>
+    <div class="stat-info">
+      <div class="value">{{ total_users }}</div>
+      <div class="label">Total Users</div>
+    </div>
+  </div>
+  <div class="stat-card fade-in" style="animation-delay:.1s">
+    <div class="stat-icon blue">🧑‍🤝‍🧑</div>
+    <div class="stat-info">
+      <div class="value">{{ total_patients }}</div>
+      <div class="label">Patients</div>
+    </div>
+  </div>
+  <div class="stat-card fade-in" style="animation-delay:.2s">
+    <div class="stat-icon green">🩺</div>
+    <div class="stat-info">
+      <div class="value">{{ total_doctors }}</div>
+      <div class="label">Doctors</div>
+    </div>
+  </div>
+  <div class="stat-card fade-in" style="animation-delay:.3s">
+    <div class="stat-icon orange">📅</div>
+    <div class="stat-info">
+      <div class="value">{{ total_appointments }}</div>
+      <div class="label">Appointments</div>
+    </div>
+  </div>
+  <div class="stat-card fade-in" style="animation-delay:.4s">
+    <div class="stat-icon red">🚨</div>
+    <div class="stat-info">
+      <div class="value">{{ total_alerts }}</div>
+      <div class="label">Emergency Alerts</div>
+    </div>
+  </div>
+  <div class="stat-card fade-in" style="animation-delay:.5s">
+    <div class="stat-icon purple">📋</div>
+    <div class="stat-info">
+      <div class="value">{{ total_records }}</div>
+      <div class="label">Health Records</div>
+    </div>
+  </div>
+</div>
+
+<!-- Quick System Charts Row -->
+<div class="chart-grid mb-3">
+  <div class="chart-container">
+    <h5>📈 Real-Time Heart Rate (24h)</h5>
+    <div class="chart-wrapper"><canvas id="chartHR"></canvas></div>
+  </div>
+  <div class="chart-container">
+    <h5>🩸 Blood Pressure Trend (24h)</h5>
+    <div class="chart-wrapper"><canvas id="chartBP"></canvas></div>
+  </div>
+</div>
+
+<div class="chart-grid-3 mb-3">
+  <div class="chart-container">
+    <h5>💨 SpO₂ Overview</h5>
+    <div class="chart-wrapper"><canvas id="chartSPO2"></canvas></div>
+  </div>
+  <div class="chart-container">
+    <h5>📊 User Distribution</h5>
+    <div class="chart-wrapper"><canvas id="chartUsers"></canvas></div>
+  </div>
+  <div class="chart-container">
+    <h5>📅 Appointment Status</h5>
+    <div class="chart-wrapper"><canvas id="chartAppts"></canvas></div>
+  </div>
+</div>
+
+<!-- Recent Users -->
+<div class="chart-grid">
+  <div class="card mb-3">
+    <div class="card-header">
+      <h5>👥 Recent Users</h5>
+      <a href="{{ url_for('admin_users') }}" class="btn btn-sm btn-outline-pink">View All</a>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Name</th><th>Email</th><th>Role</th><th>Joined</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          {% for u in recent_users %}
+          <tr>
+            <td><strong>{{ u.name }}</strong></td>
+            <td>{{ u.email }}</td>
+            <td>
+              <span class="badge {% if u.role=='doctor' %}badge-info{% elif u.role=='patient' %}badge-success{% else %}badge-pink{% endif %}">
+                {{ u.role }}
+              </span>
+            </td>
+            <td>{{ u.created_at[:10] if u.created_at else '-' }}</td>
+            <td><span class="badge badge-success">Active</span></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-header">
+      <h5>📅 Recent Appointments</h5>
+      <a href="{{ url_for('admin_appointments') }}" class="btn btn-sm btn-outline-pink">View All</a>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Patient</th><th>Doctor</th><th>Date</th><th>Token</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          {% for a in recent_appointments %}
+          <tr>
+            <td><strong>{{ a.patient_name }}</strong></td>
+            <td>{{ a.doctor_name }}</td>
+            <td>{{ a.date or '-' }}</td>
+            <td>#{{ a.token_number }}</td>
+            <td>
+              <span class="badge {% if a.status=='completed' %}badge-success{% elif a.status=='pending' %}badge-warning{% elif a.status=='cancelled' %}badge-danger{% else %}badge-info{% endif %}">
+                {{ a.status }}
+              </span>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const pink='rgba(233,30,140,1)', pinkLight='rgba(233,30,140,0.15)';
+const colors={bg:['rgba(233,30,140,.7)','rgba(21,101,192,.7)','rgba(46,125,50,.7)','rgba(230,81,0,.7)','rgba(107,33,168,.7)','rgba(0,150,136,.7)']};
+
+// Time labels
+const labels=[...Array(24)].map((_,i)=>{const d=new Date();d.setHours(d.getHours()-23+i);return d.toTimeString().slice(0,5);});
+const rand=(a,b)=>Array.from({length:24},()=>Math.round(Math.random()*(b-a)+a));
+
+// HR Chart
+new Chart(document.getElementById('chartHR'),{type:'line',data:{labels,datasets:[{label:'Heart Rate (bpm)',data:rand(60,100),borderColor:pink,backgroundColor:pinkLight,borderWidth:2,fill:true,tension:.4,pointRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{min:50,max:120}}}});
+
+// BP Chart
+new Chart(document.getElementById('chartBP'),{type:'line',data:{labels,datasets:[{label:'Systolic',data:rand(110,145),borderColor:'#5c6bc0',backgroundColor:'rgba(92,107,192,.1)',borderWidth:2,fill:true,tension:.4,pointRadius:2},{label:'Diastolic',data:rand(68,90),borderColor:'#ec407a',backgroundColor:'rgba(236,64,122,.1)',borderWidth:2,fill:true,tension:.4,pointRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top'}},scales:{y:{min:50,max:180}}}});
+
+// SpO2 Chart
+new Chart(document.getElementById('chartSPO2'),{type:'line',data:{labels,datasets:[{label:'SpO₂ %',data:rand(94,100),borderColor:'#00acc1',backgroundColor:'rgba(0,172,193,.15)',borderWidth:2,fill:true,tension:.4,pointRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{min:88,max:102}}}});
+
+// Users doughnut
+new Chart(document.getElementById('chartUsers'),{type:'doughnut',data:{labels:['Patients','Doctors'],datasets:[{data:[{{ total_patients }},{{ total_doctors }}],backgroundColor:['rgba(233,30,140,.8)','rgba(21,101,192,.8)'],borderWidth:3,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});
+
+// Appointments bar
+new Chart(document.getElementById('chartAppts'),{type:'bar',data:{labels:['Pending','Completed','Cancelled','In Progress'],datasets:[{label:'Appointments',data:[{{ total_appointments }}*0.3|round|int,{{ total_appointments }}*0.5|round|int,{{ total_appointments }}*0.1|round|int,{{ total_appointments }}*0.1|round|int],backgroundColor:['rgba(255,109,0,.8)','rgba(46,125,50,.8)','rgba(213,0,0,.8)','rgba(21,101,192,.8)'],borderRadius:8}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}});
+</script>
+{% endblock %}

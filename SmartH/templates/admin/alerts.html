@@ -1,0 +1,30 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Emergency Alerts{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="breadcrumb"><a href="{{ url_for('admin_dashboard') }}">Dashboard</a><span>›</span>Emergency Alerts</div>
+  <h1>🚨 Emergency Alerts</h1>
+  <p>All patient emergency alerts and their locations</p>
+</div>
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr><th>#</th><th>Patient</th><th>Message</th><th>Location</th><th>Status</th><th>Time</th></tr>
+    </thead>
+    <tbody>
+      {% for a in alerts %}
+      <tr>
+        <td style="color:var(--gray-400)">{{ loop.index }}</td>
+        <td><strong>{{ a.user_name }}</strong></td>
+        <td>{{ a.message or 'Emergency Alert' }}</td>
+        <td style="font-size:.82rem">Lat: {{ a.lat }}, Lng: {{ a.lng }}</td>
+        <td><span class="badge {% if a.status=='sent' %}badge-warning{% else %}badge-success{% endif %}">{{ a.status }}</span></td>
+        <td style="font-size:.82rem;color:var(--gray-500)">{{ a.created_at[:16] if a.created_at else '-' }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--gray-400);">No emergency alerts.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

@@ -1,0 +1,48 @@
+{% extends "doctor/base_doctor.html" %}
+{% block title %}Write Prescription{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="breadcrumb"><a href="{{ url_for('doctor_dashboard') }}">Dashboard</a><span>›</span>Prescription</div>
+  <h1>📝 Write Prescription</h1>
+  <p>Create digital prescriptions for your patients</p>
+</div>
+
+<div class="card" style="max-width:700px;">
+  <div class="card-header"><h5>📋 New Prescription</h5></div>
+  <div class="card-body">
+    <form method="POST">
+      <div class="form-group">
+        <label class="form-label">🧑 Select Patient</label>
+        <select name="patient_id" class="form-control" required>
+          <option value="">-- Select Patient --</option>
+          {% for p in patients %}
+          <option value="{{ p.id }}">{{ p.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">🔬 Diagnosis</label>
+        <select name="diagnosis" class="form-control">
+          <option>Hypertension</option>
+          <option>Diabetes Type 2</option>
+          <option>Common Cold / Flu</option>
+          <option>Anxiety Disorder</option>
+          <option>Migraine</option>
+          <option>Asthma</option>
+          <option>Arthritis</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">💊 Prescription</label>
+        <textarea name="prescription" class="form-control" rows="3" placeholder="Medication name, dosage, frequency..."></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">📝 Doctor Notes</label>
+        <textarea name="notes" class="form-control" rows="3" placeholder="Additional notes, lifestyle advice, follow-up instructions..."></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary btn-lg">💾 Save Prescription</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

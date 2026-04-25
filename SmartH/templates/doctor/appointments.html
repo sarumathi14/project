@@ -1,0 +1,38 @@
+{% extends "doctor/base_doctor.html" %}
+{% block title %}Appointments{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="breadcrumb"><a href="{{ url_for('doctor_dashboard') }}">Dashboard</a><span>›</span>Appointments</div>
+  <h1>📅 Appointment Management</h1>
+</div>
+<div class="table-wrap">
+  <table>
+    <thead><tr><th>#</th><th>Patient</th><th>Date</th><th>Reason</th><th>Token</th><th>Status</th><th>Update</th></tr></thead>
+    <tbody>
+      {% for a in appointments %}
+      <tr>
+        <td style="color:var(--gray-400)">{{ loop.index }}</td>
+        <td><strong>{{ a.patient_name }}</strong></td>
+        <td>{{ a.date or '—' }}</td>
+        <td>{{ a.reason or '—' }}</td>
+        <td><span class="badge badge-pink">#{{ a.token_number }}</span></td>
+        <td><span class="badge {% if a.status=='completed' %}badge-success{% elif a.status=='pending' %}badge-warning{% elif a.status=='cancelled' %}badge-danger{% else %}badge-info{% endif %}">{{ a.status }}</span></td>
+        <td>
+          <form method="POST" action="{{ url_for('update_appointment', appt_id=a.id) }}" style="display:flex;gap:.4rem;">
+            <select name="status" class="form-control" style="width:auto;padding:.35rem .6rem;font-size:.82rem;">
+              <option value="pending" {% if a.status=='pending' %}selected{% endif %}>Pending</option>
+              <option value="in_progress" {% if a.status=='in_progress' %}selected{% endif %}>In Progress</option>
+              <option value="completed" {% if a.status=='completed' %}selected{% endif %}>Completed</option>
+              <option value="cancelled" {% if a.status=='cancelled' %}selected{% endif %}>Cancelled</option>
+            </select>
+            <button type="submit" class="btn btn-success btn-sm">✔</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--gray-400);">No appointments found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

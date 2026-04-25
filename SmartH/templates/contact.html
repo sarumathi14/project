@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Contact{% endblock %}
+{% block content %}
+<section style="background:linear-gradient(135deg,var(--pink-700),var(--pink-500));padding:4rem 2rem;text-align:center;">
+  <div class="hero-badge">📞 Contact Us</div>
+  <h1 style="font-family:var(--font-heading);font-size:2.8rem;font-weight:800;color:#fff;margin:1rem 0;">Get In <span style="color:var(--pink-100)">Touch</span></h1>
+  <p style="color:rgba(255,255,255,.85);">We're here to help. Reach us anytime.</p>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div style="display:grid;grid-template-columns:1fr 1.4fr;gap:2.5rem;align-items:start;">
+      <!-- Contact Info -->
+      <div>
+        <div class="section-badge mb-2">📬 Contact Information</div>
+        <h2 style="font-family:var(--font-heading);font-size:1.8rem;font-weight:800;margin-bottom:1.5rem;">Ready to Help <span style="color:var(--pink-500)">You</span></h2>
+        <div style="display:flex;flex-direction:column;gap:1rem;">
+          {% for icon, label, val in [('📧','Email','info@smarthealth.com'),('📞','Phone','+1-800-HEALTH-01'),('📍','Address','Health Tech Park, Silicon Valley, CA'),('🕐','Support Hours','24/7 Emergency Support'),('🚑','Emergency','Call 911 for life-threatening emergencies')] %}
+          <div style="display:flex;align-items:center;gap:1rem;background:var(--pink-50);border-radius:var(--radius-sm);padding:1rem;">
+            <div style="width:44px;height:44px;background:linear-gradient(135deg,var(--pink-500),var(--pink-400));border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:#fff;flex-shrink:0;">{{ icon }}</div>
+            <div><div style="font-weight:700;font-size:.88rem;color:var(--gray-700);">{{ label }}</div><div style="color:var(--gray-600);font-size:.9rem;margin-top:.1rem;">{{ val }}</div></div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Contact Form -->
+      <div class="card">
+        <div class="card-header"><h5>✉️ Send Us a Message</h5></div>
+        <div class="card-body">
+          <form onsubmit="submitForm(event)">
+            <div class="form-row">
+              <div class="form-group"><label class="form-label">Your Name</label><input type="text" class="form-control" placeholder="Full name" required></div>
+              <div class="form-group"><label class="form-label">Email</label><input type="email" class="form-control" placeholder="your@email.com" required></div>
+            </div>
+            <div class="form-group"><label class="form-label">Subject</label>
+              <select class="form-control">
+                <option>General Inquiry</option>
+                <option>Technical Support</option>
+                <option>Doctor Registration</option>
+                <option>Partnership</option>
+                <option>Emergency Services</option>
+              </select>
+            </div>
+            <div class="form-group"><label class="form-label">Message</label><textarea class="form-control" rows="4" placeholder="How can we help you?"></textarea></div>
+            <button type="submit" class="btn btn-primary btn-lg w-100" style="justify-content:center;">📤 Send Message</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<script>
+function submitForm(e){e.preventDefault();alert('Thank you! Your message has been received. We will respond within 24 hours.'); e.target.reset();}
+</script>
+{% endblock %}

@@ -1,0 +1,36 @@
+{% extends "patient/base_patient.html" %}
+{% block title %}Health Records{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="breadcrumb"><a href="{{ url_for('patient_dashboard') }}">Dashboard</a><span>›</span>Health Records</div>
+  <h1>📋 Digital Health Records</h1>
+  <p>Your complete medical history, prescriptions, and diagnoses</p>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr><th>#</th><th>Doctor</th><th>Diagnosis</th><th>Prescription</th><th>Notes</th><th>Date</th></tr>
+    </thead>
+    <tbody>
+      {% for r in records %}
+      <tr>
+        <td style="color:var(--gray-400)">{{ loop.index }}</td>
+        <td><strong>{{ r.doctor_name }}</strong></td>
+        <td><span class="badge badge-info">{{ r.diagnosis or '—' }}</span></td>
+        <td style="font-size:.88rem;">💊 {{ r.prescription or '—' }}</td>
+        <td style="font-size:.82rem;color:var(--gray-500);">{{ r.notes or '—' }}</td>
+        <td style="font-size:.82rem;color:var(--gray-500)">{{ r.created_at[:10] if r.created_at else '-' }}</td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="6" style="text-align:center;padding:3rem;color:var(--gray-400);">
+          <div style="font-size:2rem;margin-bottom:.75rem;">📋</div>
+          No health records yet. Records are added after doctor consultations.
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

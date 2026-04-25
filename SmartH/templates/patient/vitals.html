@@ -1,0 +1,108 @@
+{% extends "patient/base_patient.html" %}
+{% block title %}Vital Signs{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="breadcrumb"><a href="{{ url_for('patient_dashboard') }}">Dashboard</a><span>›</span>Vital Signs</div>
+  <h1>❤️ Real-Time Vital Signs</h1>
+  <p>Live health monitoring — <span class="live-dot">Sensors Active</span></p>
+</div>
+
+<!-- Live Vitals Cards -->
+<div class="vitals-grid mb-3">
+  <div class="vital-card hr pulse">
+    <div class="vital-icon">❤️</div>
+    <div class="vital-label">Heart Rate</div>
+    <div class="vital-value" id="v_hr">{{ vitals.heart_rate }}</div>
+    <div class="vital-unit">BPM</div>
+    <div class="vital-status normal">Normal</div>
+  </div>
+  <div class="vital-card bp">
+    <div class="vital-icon">🩸</div>
+    <div class="vital-label">Blood Pressure</div>
+    <div class="vital-value" style="font-size:1.4rem;" id="v_bp">{{ vitals.blood_pressure_sys }}/{{ vitals.blood_pressure_dia }}</div>
+    <div class="vital-unit">mmHg</div>
+    <div class="vital-status normal">Normal</div>
+  </div>
+  <div class="vital-card spo">
+    <div class="vital-icon">💨</div>
+    <div class="vital-label">SpO₂</div>
+    <div class="vital-value" id="v_spo2">{{ "%.1f"|format(vitals.spo2) }}</div>
+    <div class="vital-unit">%</div>
+    <div class="vital-status normal">Normal</div>
+  </div>
+  <div class="vital-card tmp">
+    <div class="vital-icon">🌡️</div>
+    <div class="vital-label">Temperature</div>
+    <div class="vital-value" id="v_temp">{{ vitals.temperature }}</div>
+    <div class="vital-unit">°C</div>
+    <div class="vital-status normal">Normal</div>
+  </div>
+  <div class="vital-card glu">
+    <div class="vital-icon">🧪</div>
+    <div class="vital-label">Glucose</div>
+    <div class="vital-value" id="v_glu">{{ vitals.glucose }}</div>
+    <div class="vital-unit">mg/dL</div>
+    <div class="vital-status normal">Normal</div>
+  </div>
+</div>
+
+<!-- Vital Charts -->
+<div class="chart-grid">
+  <div class="chart-container">
+    <h5>❤️ Heart Rate History (24h)</h5>
+    <div class="chart-wrapper"><canvas id="chartHRHist"></canvas></div>
+  </div>
+  <div class="chart-container">
+    <h5>🩸 Blood Pressure (24h)</h5>
+    <div class="chart-wrapper"><canvas id="chartBPHist"></canvas></div>
+  </div>
+</div>
+
+<div class="chart-grid-3">
+  <div class="chart-container">
+    <h5>💨 SpO₂ (24h)</h5>
+    <div class="chart-wrapper"><canvas id="chartSpO2Hist"></canvas></div>
+  </div>
+  <div class="chart-container">
+    <h5>🌡️ Temperature (24h)</h5>
+    <div class="chart-wrapper"><canvas id="chartTmpHist"></canvas></div>
+  </div>
+  <div class="chart-container">
+    <h5>🧪 Glucose (24h)</h5>
+    <div class="chart-wrapper"><canvas id="chartGluHist"></canvas></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const history = {{ history|safe }};
+const labels = history.map(h=>h.time);
+const hr = history.map(h=>h.hr);
+const bpSys = history.map(h=>h.bp_sys);
+const bpDia = history.map(h=>h.bp_dia);
+const spo2  = history.map(h=>h.spo2);
+const temp  = history.map(h=>h.temp);
+const glu   = history.map(h=>h.glucose);
+
+const opt=(ymin,ymax)=>({responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:9},maxTicksLimit:8}},y:{min:ymin,max:ymax}}});
+
+new Chart('chartHRHist',{type:'line',data:{labels,datasets:[{label:'HR',data:hr,borderColor:'rgba(233,30,140,1)',backgroundColor:'rgba(233,30,140,.12)',borderWidth:2.5,fill:true,tension:.4,pointRadius:2}]},options:opt(50,120)});
+
+new Chart('chartBPHist',{type:'line',data:{labels,datasets:[{label:'Systolic',data:bpSys,borderColor:'#5c6bc0',backgroundColor:'rgba(92,107,192,.1)',borderWidth:2,fill:true,tension:.4,pointRadius:2},{label:'Diastolic',data:bpDia,borderColor:'#ec407a',backgroundColor:'rgba(236,64,122,.1)',borderWidth:2,fill:false,tension:.4,pointRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{font:{size:10}}}},scales:{x:{ticks:{font:{size:9}}},y:{min:50,max:185}}}});
+
+new Chart('chartSpO2Hist',{type:'line',data:{labels,datasets:[{data:spo2,borderColor:'#00acc1',backgroundColor:'rgba(0,172,193,.12)',borderWidth:2,fill:true,tension:.4,pointRadius:1.5}]},options:opt(88,102)});
+new Chart('chartTmpHist',{type:'line',data:{labels,datasets:[{data:temp,borderColor:'#ff8f00',backgroundColor:'rgba(255,143,0,.12)',borderWidth:2,fill:true,tension:.4,pointRadius:1.5}]},options:opt(35,40)});
+new Chart('chartGluHist',{type:'line',data:{labels,datasets:[{data:glu,borderColor:'#43a047',backgroundColor:'rgba(67,160,71,.12)',borderWidth:2,fill:true,tension:.4,pointRadius:1.5}]},options:opt(50,200)});
+
+// Live refresh
+setInterval(async()=>{
+  const v=await fetch('/api/vitals/live').then(r=>r.json());
+  document.getElementById('v_hr').textContent=v.heart_rate;
+  document.getElementById('v_bp').textContent=v.blood_pressure_sys+'/'+v.blood_pressure_dia;
+  document.getElementById('v_spo2').textContent=v.spo2.toFixed(1);
+  document.getElementById('v_temp').textContent=v.temperature;
+  document.getElementById('v_glu').textContent=v.glucose;
+}, 6000);
+</script>
+{% endblock %}

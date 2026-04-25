@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Admin Dashboard{% endblock %} | SmartHealth Admin</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <a href="{{ url_for('home') }}" class="navbar-brand">
+      <div class="brand-icon">💊</div>
+      <div class="brand-text">Smart<span>Health</span></div>
+    </a>
+    <ul class="navbar-nav">
+      <li><a href="{{ url_for('admin_dashboard') }}" {% if request.endpoint=='admin_dashboard' %}class="active"{% endif %}>🛡️ Dashboard</a></li>
+      <li><a href="{{ url_for('admin_reports') }}" {% if request.endpoint=='admin_reports' %}class="active"{% endif %}>📊 Reports</a></li>
+      <li><a href="{{ url_for('admin_analytics') }}" {% if request.endpoint=='admin_analytics' %}class="active"{% endif %}>📈 Analytics</a></li>
+      <li><a href="{{ url_for('admin_users') }}" {% if request.endpoint=='admin_users' %}class="active"{% endif %}>👥 Users</a></li>
+    </ul>
+    <div class="navbar-actions">
+      <span style="color:rgba(255,255,255,.85);font-size:.85rem;">🛡️ {{ session.name }}</span>
+      <a href="{{ url_for('logout') }}" class="btn-nav">🚪 Logout</a>
+    </div>
+  </nav>
+
+  <div id="flash-container" style="padding:0 1rem;">
+    {% for cat, msg in get_flashed_messages(with_categories=True) %}
+    <div class="alert alert-{{ cat }}" style="margin:0;border-radius:0;">{{ msg }}</div>
+    {% endfor %}
+  </div>
+
+  <div class="layout-wrapper">
+    <!-- Admin Sidebar -->
+    <nav class="sidebar">
+      <div class="sidebar-brand">
+        <div style="font-size:.85rem;font-weight:700;color:#fff;margin-bottom:.4rem;">Administrator Panel</div>
+        <div class="role-badge">🛡️ Super Admin</div>
+      </div>
+      <ul class="sidebar-nav">
+        <li class="sidebar-section-title">Overview</li>
+        <li><a href="{{ url_for('admin_dashboard') }}" {% if request.endpoint=='admin_dashboard' %}class="active"{% endif %}><span class="nav-icon">🏠</span>Dashboard</a></li>
+        <li><a href="{{ url_for('admin_analytics') }}" {% if request.endpoint=='admin_analytics' %}class="active"{% endif %}><span class="nav-icon">📈</span>Analytics</a></li>
+        <li><a href="{{ url_for('admin_reports') }}" {% if request.endpoint=='admin_reports' %}class="active"{% endif %}><span class="nav-icon">📊</span>Reports & Graphs</a></li>
+        <div class="sidebar-divider"></div>
+        <li class="sidebar-section-title">Management</li>
+        <li><a href="{{ url_for('admin_users') }}" {% if request.endpoint=='admin_users' %}class="active"{% endif %}><span class="nav-icon">👥</span>Users</a></li>
+        <li><a href="{{ url_for('admin_users') }}?role=doctor" {% if request.endpoint=='admin_users' and request.args.get('role')=='doctor' %}class="active"{% endif %}><span class="nav-icon">🩺</span>Doctors</a></li>
+        <li><a href="{{ url_for('admin_users') }}?role=patient" {% if request.endpoint=='admin_users' and request.args.get('role')=='patient' %}class="active"{% endif %}><span class="nav-icon">🧑‍🤝‍🧑</span>Patients</a></li>
+        <li><a href="{{ url_for('admin_appointments') }}" {% if request.endpoint=='admin_appointments' %}class="active"{% endif %}><span class="nav-icon">📅</span>Appointments</a></li>
+        <li><a href="{{ url_for('admin_records') }}" {% if request.endpoint=='admin_records' %}class="active"{% endif %}><span class="nav-icon">📋</span>Health Records</a></li>
+        <li><a href="{{ url_for('admin_alerts') }}" {% if request.endpoint=='admin_alerts' %}class="active"{% endif %}><span class="nav-icon">🚨</span>Emergency Alerts</a></li>
+        <div class="sidebar-divider"></div>
+        <li class="sidebar-section-title">Account</li>
+        <li><a href="{{ url_for('home') }}"><span class="nav-icon">🏥</span>View Site</a></li>
+        <li><a href="{{ url_for('logout') }}"><span class="nav-icon">🚪</span>Logout</a></li>
+      </ul>
+    </nav>
+
+    <main class="main-content">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+
+  <script>
+    setTimeout(() => {
+      document.querySelectorAll('#flash-container .alert').forEach(f => { f.style.transition='all .5s'; f.style.opacity='0'; f.style.maxHeight='0'; f.style.padding='0'; setTimeout(()=>f.remove(),500); });
+    }, 4000);
+  </script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

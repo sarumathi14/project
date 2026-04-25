@@ -1,0 +1,46 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Manage Users{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="breadcrumb"><a href="{{ url_for('admin_dashboard') }}">Dashboard</a><span>›</span>Users</div>
+  <h1>👥 User Management</h1>
+  <p>Manage all registered patients and doctors</p>
+</div>
+
+<!-- Filter Tabs -->
+<div style="display:flex;gap:.75rem;margin-bottom:1.5rem;flex-wrap:wrap;">
+  <a href="{{ url_for('admin_users') }}" class="btn {% if not role_filter %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">All Users</a>
+  <a href="{{ url_for('admin_users') }}?role=patient" class="btn {% if role_filter=='patient' %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">🧑‍🤝‍🧑 Patients</a>
+  <a href="{{ url_for('admin_users') }}?role=doctor" class="btn {% if role_filter=='doctor' %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">🩺 Doctors</a>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr><th>#</th><th>Name</th><th>Email</th><th>Role</th><th>Phone</th><th>Age</th><th>Gender</th><th>Specialization</th><th>Joined</th><th>Action</th></tr>
+    </thead>
+    <tbody>
+      {% for u in users %}
+      <tr>
+        <td style="color:var(--gray-400)">{{ loop.index }}</td>
+        <td><strong>{{ u.name }}</strong></td>
+        <td style="font-size:.85rem;">{{ u.email }}</td>
+        <td><span class="badge {% if u.role=='doctor' %}badge-info{% else %}badge-success{% endif %}">{{ u.role }}</span></td>
+        <td style="font-size:.85rem;">{{ u.phone or '—' }}</td>
+        <td>{{ u.age or '—' }}</td>
+        <td>{{ u.gender or '—' }}</td>
+        <td style="font-size:.85rem;">{{ u.specialization or '—' }}</td>
+        <td style="font-size:.82rem;color:var(--gray-500)">{{ u.created_at[:10] if u.created_at else '-' }}</td>
+        <td>
+          <form method="POST" action="{{ url_for('admin_delete_user', user_id=u.id) }}" onsubmit="return confirm('Delete this user?')">
+            <button type="submit" class="btn btn-danger btn-sm">🗑️</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="10" style="text-align:center;padding:2rem;color:var(--gray-400);">No users found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
